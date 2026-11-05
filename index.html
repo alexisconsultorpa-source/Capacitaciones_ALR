@@ -7,7 +7,7 @@
   <!-- Tailwind CSS por CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 font-sans min-h-screen flex flex-col">
+<body class="bg-slate-100 font-sans min-h-screen flex flex-col overflow-x-hidden">
 
   <!-- Contenedor Principal de la App -->
   <div id="app" class="flex-1 flex flex-col"></div>
@@ -88,6 +88,7 @@
     function setTab(tab) {
       state.activeTab = tab;
       render();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function addPost(event) {
@@ -310,7 +311,8 @@
       }
 
       app.innerHTML = `
-        <header class="bg-slate-900 text-white shadow sticky top-0 z-50">
+        <!-- Barra superior fija -->
+        <header class="bg-slate-900 text-white shadow sticky top-0 z-50 w-full">
           <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-3">
               <div class="bg-emerald-600 p-2 rounded-lg font-bold">🛡️</div>
@@ -336,7 +338,8 @@
           </div>
         </header>
 
-        <nav class="bg-white border-b border-slate-200 shadow-sm sticky top-[53px] z-40 overflow-x-auto">
+        <!-- Menú de navegación fijo debajo de la barra -->
+        <nav class="bg-white border-b border-slate-200 shadow-sm sticky top-[57px] z-40 w-full overflow-x-auto">
           <div class="max-w-7xl mx-auto px-4 flex space-x-4 whitespace-nowrap">
             <button onclick="setTab('muro')" class="py-3 px-3 text-xs font-semibold border-b-2 ${state.activeTab === 'muro' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-600'}">💬 Muro Social</button>
             <button onclick="setTab('modulos')" class="py-3 px-3 text-xs font-semibold border-b-2 ${state.activeTab === 'modulos' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-600'}">📚 Módulos y PDFs</button>
@@ -347,7 +350,8 @@
           </div>
         </nav>
 
-        <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6">
+        <!-- Contenido principal que se desliza de manera natural -->
+        <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 my-auto">
           ${renderTabContent()}
         </main>
 
@@ -557,32 +561,28 @@
 
       if (state.activeTab === 'fototeca') {
         return `
-          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
-            <h3 class="text-sm font-bold text-slate-900">Fototeca de Actividades de Campo</h3>
-            <p class="text-xs text-slate-500">Galería de evidencias prácticas del salón.</p>
-            <form onsubmit="addPhoto(event)" class="bg-slate-50 border p-3 rounded-xl space-y-2">
-              <h4 class="font-bold text-slate-800 text-xs">Compartir nueva foto</h4>
-              <div class="grid gap-2 sm:grid-cols-2">
-                <input type="text" id="photoTitle" placeholder="Título (ej. Medición en Pista)" class="p-2 border rounded text-xs bg-white">
-                <input type="text" id="photoUrl" placeholder="URL de imagen" class="p-2 border rounded text-xs bg-white">
-              </div>
-              <div class="flex justify-end">
-                <button type="submit" class="px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-semibold">Subir Foto</button>
-              </div>
-            </form>
-            <div class="grid gap-4 sm:grid-cols-2">
-              ${state.photos.map(p => `
-                <div class="border rounded-xl overflow-hidden bg-slate-50 shadow-sm">
-                  <div class="h-36 bg-slate-200">
-                    <img src="${p.url}" alt="${p.title}" class="w-full h-full object-cover">
-                  </div>
-                  <div class="p-3">
-                    <h5 class="font-bold text-slate-800 text-xs mb-0.5">${p.title}</h5>
-                    <p class="text-[10px] text-slate-500">Subido por: ${p.author}</p>
-                  </div>
-                </div>
-              `).join('')}
+          <form onsubmit="addPhoto(event)" class="bg-white border rounded-xl p-4 shadow-sm mb-6 space-y-2">
+            <h4 class="font-bold text-slate-800 text-xs">Compartir nueva foto</h4>
+            <div class="grid gap-2 sm:grid-cols-2">
+              <input type="text" id="photoTitle" placeholder="Título (ej. Medición en Pista)" class="p-2 border rounded text-xs bg-white">
+              <input type="text" id="photoUrl" placeholder="URL de imagen" class="p-2 border rounded text-xs bg-white">
             </div>
+            <div class="flex justify-end">
+              <button type="submit" class="px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-semibold">Subir Foto</button>
+            </div>
+          </form>
+          <div class="grid gap-4 sm:grid-cols-2">
+            ${state.photos.map(p => `
+              <div class="border rounded-xl overflow-hidden bg-slate-50 shadow-sm">
+                <div class="h-36 bg-slate-200">
+                  <img src="${p.url}" alt="${p.title}" class="w-full h-full object-cover">
+                </div>
+                <div class="p-3">
+                  <h5 class="font-bold text-slate-800 text-xs mb-0.5">${p.title}</h5>
+                  <p class="text-[10px] text-slate-500">Subido por: ${p.author}</p>
+                </div>
+              </div>
+            `).join('')}
           </div>
         `;
       }
