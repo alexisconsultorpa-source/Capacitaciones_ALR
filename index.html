@@ -14,43 +14,17 @@
 
   <!-- Lógica de la Aplicación con Almacenamiento Local (localStorage) -->
   <script>
+    // Estado por defecto completamente limpio (sin ejemplos de prueba)
     const defaultState = {
       user: null,
       activeTab: 'muro',
-      menuOpen: false, // Estado para abrir/cerrar el menú de 3 líneas
-      posts: [
-        {
-          id: 1,
-          author: 'Alexis León Rivera (Capacitador)',
-          role: 'admin',
-          content: '¡Bienvenidos al salón oficial de Capacitaciones ALR! Recuerden revisar su cronograma de campo para esta semana.',
-          timestamp: 'Hace 2 horas',
-          likes: 5,
-          comments: [
-            { id: 101, author: 'Carlos Mendoza', content: '¡Entendido profesor! Listo para iniciar las prácticas.', timestamp: 'Hace 1 hora' }
-          ]
-        }
-      ],
-      modules: [
-        { id: 1, course: 'Supervisor de EDS', title: 'Módulo 1: Enfoque Sistémico y Liderazgo en Pista', desc: 'Diagnóstico integral de los 5 sistemas organizacionales y estilos de dirección.', url: '#' },
-        { id: 2, course: 'Mentor ALR', title: 'Módulo 2: El Rol del Mentor y Arquetipos de Apoyo', desc: 'Metodología de acompañamiento par a par y adaptación en tienda Super7.', url: '#' },
-        { id: 3, course: 'Capacitador Operativo', title: 'Módulo 3: DNC y Diseño Instruccional Operativo', desc: 'Aplicación del Pareto 80/20, Hojas HDT y alineación con normas INADEH.', url: '#' }
-      ],
-      presentations: [
-        { id: 1, course: 'Supervisor de EDS', title: 'Presentación PPT: Liderazgo y Enfoque Sistémico', desc: 'Diapositivas oficiales de la sesión teórica en clase.', url: '#' }
-      ],
-      tasks: [
-        { id: 1, title: 'Tarea 1: Matriz de Diagnóstico Sistémico y Mapeo en EDS', desc: 'Realizar el levantamiento de procesos y mapeo operativo en pista.', dueDate: 'Viernes, 11:59 PM', status: 'Pendiente', grade: null, url: '#' },
-        { id: 2, title: 'Tarea 2: Bitácora de Campo de Mentoría y Arquetipos', desc: 'Completar registros de acompañamiento par a par.', dueDate: 'Viernes, 11:59 PM', status: 'Pendiente', grade: null, url: '#' },
-        { id: 3, title: 'Tarea 3: Diseño de Hoja de Descomposición de Trabajo (HDT)', desc: 'Desglose técnico de operaciones críticas.', dueDate: 'Viernes, 11:59 PM', status: 'Pendiente', grade: null, url: '#' }
-      ],
-      questions: [
-        { id: 1, student: 'María Rodríguez', question: '¿Cómo procedo si el administrador de la estación no puede firmar la bitácora el viernes?', answer: 'Puedes programar la firma para primera hora del lunes siguiente notificándolo previamente por este medio.', answered: true }
-      ],
-      photos: [
-        { id: 1, title: 'Práctica de Calibración con Serafín en Pista', author: 'Carlos Mendoza', url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80' },
-        { id: 2, title: 'Simulación de Auditoría y Servicio en Tienda Super7', author: 'Ana Gómez', url: 'https://images.unsplash.com/photo-1556740758-90de374c12ad?auto=format&fit=crop&w=600&q=80' }
-      ]
+      menuOpen: false,
+      posts: [],
+      modules: [],
+      presentations: [],
+      tasks: [],
+      questions: [],
+      photos: []
     };
 
     let state = JSON.parse(localStorage.getItem('alr_app_state')) || defaultState;
@@ -95,7 +69,7 @@
 
     function setTab(tab) {
       state.activeTab = tab;
-      state.menuOpen = false; // Cerrar el menú al seleccionar una opción
+      state.menuOpen = false;
       render();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -304,14 +278,14 @@
     }
 
     function resetSalonData() {
-      if (confirm('¿Estás seguro de limpiar todos los datos del salón actual para iniciar con un nuevo grupo? Se restablecerán los valores por defecto.')) {
+      if (confirm('¿Estás seguro de limpiar todos los datos del salón actual para iniciar con un nuevo grupo? Se borrarán todos los registros y ejemplos.')) {
         localStorage.removeItem('alr_app_state');
         state = JSON.parse(JSON.stringify(defaultState));
         state.user = { name: 'Alexis León Rivera', role: 'admin', email: 'alexis.leon@capacitacionesalr.com' };
         state.activeTab = 'muro';
         state.menuOpen = false;
         render();
-        alert('¡Salón reiniciado con éxito para un nuevo grupo!');
+        alert('¡Salón reiniciado con éxito! Todo ha quedado completamente limpio.');
       }
     }
 
@@ -366,7 +340,6 @@
               </div>
             </div>
 
-            <!-- Controles a la derecha (Botón reset, usuario, salir y menú hamburguesa de 3 líneas) -->
             <div class="flex items-center space-x-3">
               ${state.user.role === 'admin' ? `
                 <button onclick="resetSalonData()" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1.5 rounded text-[11px] font-semibold transition hidden sm:inline-block" title="Limpiar datos para nuevo salón">
@@ -441,6 +414,7 @@
             </div>
 
             <div class="space-y-4">
+              ${state.posts.length === 0 ? '<p class="text-center text-xs text-slate-400 py-8 bg-white rounded-xl border border-slate-200">No hay publicaciones en el muro todavía. ¡Sé el primero en compartir algo!</p>' : ''}
               ${state.posts.map(p => `
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
                   <div class="flex justify-between items-start">
@@ -482,7 +456,7 @@
                 <h3 class="text-xs font-bold text-emerald-900 uppercase mb-3">➕ Cargar Nuevo Módulo / Material (Panel de Administrador)</h3>
                 <form onsubmit="addModule(event)" class="space-y-3">
                   <div class="grid gap-3 sm:grid-cols-2">
-                    <input type="text" id="modTitle" required placeholder="Título del Módulo (ej. Módulo 4: HSE)" class="p-2 border rounded text-xs bg-white">
+                    <input type="text" id="modTitle" required placeholder="Título del Módulo (ej. Módulo 1: HSE)" class="p-2 border rounded text-xs bg-white">
                     <input type="text" id="modCourse" required placeholder="Nombre del Programa (ej. Supervisor EDS)" class="p-2 border rounded text-xs bg-white">
                   </div>
                   <textarea id="modDesc" rows="2" placeholder="Breve descripción del contenido..." class="w-full p-2 border rounded text-xs bg-white resize-none"></textarea>
@@ -497,19 +471,21 @@
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
               <h3 class="text-sm font-bold text-slate-900">Módulos Académicos Oficiales</h3>
               <p class="text-xs text-slate-500">Materiales de estudio obligatorios de Capacitaciones ALR.</p>
-              <div class="grid gap-4 sm:grid-cols-3">
-                ${state.modules.map(m => `
-                  <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col justify-between relative">
-                    ${state.user.role === 'admin' ? `<button onclick="deleteModule(${m.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs" title="Eliminar módulo">🗑️</button>` : ''}
-                    <div>
-                      <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 mb-2 inline-block">${m.course}</span>
-                      <h4 class="font-bold text-slate-900 text-xs mb-1 pr-6">${m.title}</h4>
-                      <p class="text-[11px] text-slate-600 mb-4">${m.desc}</p>
+              ${state.modules.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay módulos cargados por el momento.</p>' : `
+                <div class="grid gap-4 sm:grid-cols-3">
+                  ${state.modules.map(m => `
+                    <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col justify-between relative">
+                      ${state.user.role === 'admin' ? `<button onclick="deleteModule(${m.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs" title="Eliminar módulo">🗑️</button>` : ''}
+                      <div>
+                        <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 mb-2 inline-block">${m.course}</span>
+                        <h4 class="font-bold text-slate-900 text-xs mb-1 pr-6">${m.title}</h4>
+                        <p class="text-[11px] text-slate-600 mb-4">${m.desc}</p>
+                      </div>
+                      <a href="${m.url}" target="_blank" class="block text-center w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold">📄 Ver Módulo</a>
                     </div>
-                    <a href="${m.url !== '#' ? m.url : '#'}" target="_blank" onclick="${m.url === '#' ? "alert('Abriendo documento oficial...'); return false;" : ""}" class="block text-center w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold">📄 Ver Módulo</a>
-                  </div>
-                `).join('')}
-              </div>
+                  `).join('')}
+                </div>
+              `}
             </div>
           </div>
         `;
@@ -540,19 +516,21 @@
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
               <h3 class="text-sm font-bold text-slate-900">Presentaciones de Clase (PPT)</h3>
               <p class="text-xs text-slate-500">Material visual de las clases para visualizar en línea o descargar.</p>
-              <div class="grid gap-4 sm:grid-cols-3">
-                ${state.presentations.map(ppt => `
-                  <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col justify-between relative">
-                    ${state.user.role === 'admin' ? `<button onclick="deletePresentation(${ppt.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs" title="Eliminar clase">🗑️</button>` : ''}
-                    <div>
-                      <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-800 mb-2 inline-block">${ppt.course}</span>
-                      <h4 class="font-bold text-slate-900 text-xs mb-1 pr-6">${ppt.title}</h4>
-                      <p class="text-[11px] text-slate-600 mb-4">${ppt.desc}</p>
+              ${state.presentations.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay clases PPT cargadas por el momento.</p>' : `
+                <div class="grid gap-4 sm:grid-cols-3">
+                  ${state.presentations.map(ppt => `
+                    <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col justify-between relative">
+                      ${state.user.role === 'admin' ? `<button onclick="deletePresentation(${ppt.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs" title="Eliminar clase">🗑️</button>` : ''}
+                      <div>
+                        <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-800 mb-2 inline-block">${ppt.course}</span>
+                        <h4 class="font-bold text-slate-900 text-xs mb-1 pr-6">${ppt.title}</h4>
+                        <p class="text-[11px] text-slate-600 mb-4">${ppt.desc}</p>
+                      </div>
+                      <a href="${ppt.url}" target="_blank" class="block text-center w-full py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-semibold">📊 Ver Clase PPT</a>
                     </div>
-                    <a href="${ppt.url !== '#' ? ppt.url : '#'}" target="_blank" onclick="${ppt.url === '#' ? "alert('Abriendo presentación PPT...'); return false;" : ""}" class="block text-center w-full py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-semibold">📊 Ver Clase PPT</a>
-                  </div>
-                `).join('')}
-              </div>
+                  `).join('')}
+                </div>
+              `}
             </div>
           </div>
         `;
@@ -566,7 +544,7 @@
                 <h3 class="text-xs font-bold text-blue-900 uppercase mb-3">➕ Cargar Nueva Tarea / Entregable (Panel de Administrador)</h3>
                 <form onsubmit="addTask(event)" class="space-y-3">
                   <div class="grid gap-3 sm:grid-cols-2">
-                    <input type="text" id="taskTitle" required placeholder="Título de la Tarea (ej. Tarea 4: Auditoría)" class="p-2 border rounded text-xs bg-white">
+                    <input type="text" id="taskTitle" required placeholder="Título de la Tarea (ej. Tarea 1: Auditoría)" class="p-2 border rounded text-xs bg-white">
                     <input type="text" id="taskDueDate" required placeholder="Fecha límite (ej. Viernes, 11:59 PM)" class="p-2 border rounded text-xs bg-white">
                   </div>
                   <textarea id="taskDesc" rows="2" placeholder="Instrucciones o descripción de la tarea..." class="w-full p-2 border rounded text-xs bg-white resize-none"></textarea>
@@ -581,27 +559,29 @@
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <h3 class="text-sm font-bold text-slate-900 mb-1">Entregables y Tareas de Campo</h3>
               <p class="text-xs text-slate-500 mb-4">Consulta las tareas y sube tus reportes en PDF directamente a la carpeta oficial.</p>
-              <div class="space-y-4">
-                ${state.tasks.map(t => `
-                  <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative">
-                    ${state.user.role === 'admin' ? `<button onclick="deleteTask(${t.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs" title="Eliminar tarea">🗑️</button>` : ''}
-                    <div>
-                      <div class="flex items-center space-x-2">
-                        <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${t.status === 'Completada' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${t.status}</span>
-                        <span class="text-[10px] text-slate-400">📅 Entrega: ${t.dueDate}</span>
+              ${state.tasks.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay tareas asignadas por el momento.</p>' : `
+                <div class="space-y-4">
+                  ${state.tasks.map(t => `
+                    <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative">
+                      ${state.user.role === 'admin' ? `<button onclick="deleteTask(${t.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs" title="Eliminar tarea">🗑️</button>` : ''}
+                      <div>
+                        <div class="flex items-center space-x-2">
+                          <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${t.status === 'Completada' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${t.status}</span>
+                          <span class="text-[10px] text-slate-400">📅 Entrega: ${t.dueDate}</span>
+                        </div>
+                        <h4 class="font-bold text-slate-900 text-xs mt-1 pr-6">${t.title}</h4>
+                        <p class="text-[11px] text-slate-600 mt-0.5">${t.desc || ''}</p>
+                        ${t.grade !== null ? `<p class="text-[11px] text-emerald-600 font-bold mt-1">Calificación: ${t.grade} / 100 pts</p>` : ''}
                       </div>
-                      <h4 class="font-bold text-slate-900 text-xs mt-1 pr-6">${t.title}</h4>
-                      <p class="text-[11px] text-slate-600 mt-0.5">${t.desc || ''}</p>
-                      ${t.grade !== null ? `<p class="text-[11px] text-emerald-600 font-bold mt-1">Calificación: ${t.grade} / 100 pts</p>` : ''}
+                      <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                        <a href="${t.url}" target="_blank" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded text-xs font-semibold">📄 Ver Tarea</a>
+                        <a href="https://drive.google.com/drive/folders/1DeIHSbZiiSidRHdvJmyPRBpy8VT3WFTP" target="_blank" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">📤 Cargar Tarea (PDF)</a>
+                        <button onclick="submitTask(${t.id})" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold">✅ Marcar Entregada</button>
+                      </div>
                     </div>
-                    <div class="flex flex-wrap gap-2 w-full sm:w-auto">
-                      <a href="${t.url !== '#' ? t.url : '#'}" target="_blank" onclick="${t.url === '#' ? "alert('Abriendo guía de tarea...'); return false;" : ""}" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded text-xs font-semibold">📄 Ver Tarea</a>
-                      <a href="https://drive.google.com/drive/folders/1DeIHSbZiiSidRHdvJmyPRBpy8VT3WFTP" target="_blank" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">📤 Cargar Tarea (PDF)</a>
-                      <button onclick="submitTask(${t.id})" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold">✅ Marcar Entregada</button>
-                    </div>
-                  </div>
-                `).join('')}
-              </div>
+                  `).join('')}
+                </div>
+              `}
             </div>
           </div>
         `;
@@ -612,24 +592,23 @@
           <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
             <h3 class="text-sm font-bold text-slate-900">Registro de Calificaciones Automáticas</h3>
             <p class="text-xs text-slate-500">Evaluación en tiempo real del salón actual.</p>
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-xs text-slate-600">
-                <thead class="bg-slate-50 text-slate-700 uppercase text-[9px]">
-                  <tr>
-                    <th class="py-2.5 px-3">Estudiante</th>
-                    <th class="py-2.5 px-3 text-center">Tarea 1</th>
-                    <th class="py-2.5 px-3 text-center">Tarea 2</th>
-                    <th class="py-2.5 px-3 text-center">Tarea 3</th>
-                    <th class="py-2.5 px-3 text-center">Promedio</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                  <tr><td class="py-2.5 px-3 font-bold">Carlos Mendoza</td><td class="text-center">100</td><td class="text-center">90</td><td class="text-center">95</td><td class="text-center font-bold text-emerald-600">95 pts</td></tr>
-                  <tr><td class="py-2.5 px-3 font-bold">Ana Gómez</td><td class="text-center">85</td><td class="text-center">90</td><td class="text-center">90</td><td class="text-center font-bold text-emerald-600">88 pts</td></tr>
-                  <tr><td class="py-2.5 px-3 font-bold">${state.user.name} (Tú)</td><td class="text-center">${state.tasks[0]?.grade || 0}</td><td class="text-center">${state.tasks[1]?.grade || 0}</td><td class="text-center">${state.tasks[2]?.grade || 0}</td><td class="text-center font-bold text-emerald-600">92 pts</td></tr>
-                </tbody>
-              </table>
-            </div>
+            ${state.tasks.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">Aún no hay tareas registradas para mostrar calificaciones.</p>' : `
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-600">
+                  <thead class="bg-slate-50 text-slate-700 uppercase text-[9px]">
+                    <tr>
+                      <th class="py-2.5 px-3">Estudiante</th>
+                      <th class="py-2.5 px-3 text-center">Estado General</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100">
+                    <tr><td class="py-2.5 px-3 font-bold">Carlos Mendoza</td><td class="text-center font-bold text-emerald-600">En curso</td></tr>
+                    <tr><td class="py-2.5 px-3 font-bold">Ana Gómez</td><td class="text-center font-bold text-emerald-600">En curso</td></tr>
+                    <tr><td class="py-2.5 px-3 font-bold">${state.user.name} (Tú)</td><td class="text-center font-bold text-emerald-600">Activo</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            `}
           </div>
         `;
       }
@@ -646,22 +625,24 @@
               </div>
             </form>
             <div class="space-y-3 pt-2">
-              ${state.questions.map(q => `
-                <div class="border rounded-lg p-3 bg-slate-50 space-y-2 text-xs">
-                  <div class="font-bold text-slate-800">Consulta de: ${q.student}</div>
-                  <p class="bg-white p-2.5 rounded border">"${q.question}"</p>
-                  ${q.answered ? `
-                    <div class="bg-emerald-50 border border-emerald-200 p-2.5 rounded text-emerald-900">
-                      <b>Respuesta Oficial de Alexis León Rivera:</b> ${q.answer}
-                    </div>
-                  ` : (state.user.role === 'admin' ? `
-                    <div class="space-y-1 pt-1">
-                      <input type="text" id="ans-${q.id}" placeholder="Escribe la respuesta oficial..." class="w-full bg-white border rounded px-2 py-1 text-xs">
-                      <button onclick="answerQuestion(${q.id})" class="bg-emerald-600 text-white px-3 py-1 rounded text-xs font-semibold">Publicar Respuesta</button>
-                    </div>
-                  ` : '<span class="text-amber-600 font-semibold text-[11px]">Pendiente de respuesta del capacitador</span>')}
-                </div>
-              `).join('')}
+              ${state.questions.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay preguntas registradas todavía.</p>' : `
+                ${state.questions.map(q => `
+                  <div class="border rounded-lg p-3 bg-slate-50 space-y-2 text-xs">
+                    <div class="font-bold text-slate-800">Consulta de: ${q.student}</div>
+                    <p class="bg-white p-2.5 rounded border">"${q.question}"</p>
+                    ${q.answered ? `
+                      <div class="bg-emerald-50 border border-emerald-200 p-2.5 rounded text-emerald-900">
+                        <b>Respuesta Oficial de Alexis León Rivera:</b> ${q.answer}
+                      </div>
+                    ` : (state.user.role === 'admin' ? `
+                      <div class="space-y-1 pt-1">
+                        <input type="text" id="ans-${q.id}" placeholder="Escribe la respuesta oficial..." class="w-full bg-white border rounded px-2 py-1 text-xs">
+                        <button onclick="answerQuestion(${q.id})" class="bg-emerald-600 text-white px-3 py-1 rounded text-xs font-semibold">Publicar Respuesta</button>
+                      </div>
+                    ` : '<span class="text-amber-600 font-semibold text-[11px]">Pendiente de respuesta del capacitador</span>')}
+                  </div>
+                `).join('')}
+              `}
             </div>
           </div>
         `;
@@ -679,19 +660,21 @@
               <button type="submit" class="px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-semibold">Subir Foto</button>
             </div>
           </form>
-          <div class="grid gap-4 sm:grid-cols-2">
-            ${state.photos.map(p => `
-              <div class="border rounded-xl overflow-hidden bg-slate-50 shadow-sm">
-                <div class="h-36 bg-slate-200">
-                  <img src="${p.url}" alt="${p.title}" class="w-full h-full object-cover">
+          ${state.photos.length === 0 ? '<p class="text-center text-xs text-slate-400 py-8 bg-white rounded-xl border border-slate-200">No hay fotos en la fototeca todavía.</p>' : `
+            <div class="grid gap-4 sm:grid-cols-2">
+              ${state.photos.map(p => `
+                <div class="border rounded-xl overflow-hidden bg-slate-50 shadow-sm">
+                  <div class="h-36 bg-slate-200">
+                    <img src="${p.url}" alt="${p.title}" class="w-full h-full object-cover">
+                  </div>
+                  <div class="p-3">
+                    <h5 class="font-bold text-slate-800 text-xs mb-0.5">${p.title}</h5>
+                    <p class="text-[10px] text-slate-500">Subido por: ${p.author}</p>
+                  </div>
                 </div>
-                <div class="p-3">
-                  <h5 class="font-bold text-slate-800 text-xs mb-0.5">${p.title}</h5>
-                  <p class="text-[10px] text-slate-500">Subido por: ${p.author}</p>
-                </div>
-              </div>
-            `).join('')}
-          </div>
+              `).join('')}
+            </div>
+          `}
         `;
       }
     }
