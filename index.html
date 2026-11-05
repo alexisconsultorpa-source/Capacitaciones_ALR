@@ -7,18 +7,24 @@
   <!-- Tailwind CSS por CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 font-sans min-h-screen flex flex-col overflow-x-hidden">
+<body class="bg-slate-100 font-sans min-h-screen flex flex-col overflow-x-hidden" onclick="handleOutsideClick(event)">
 
   <!-- Contenedor Principal de la App -->
   <div id="app" class="flex-1 flex flex-col"></div>
 
   <!-- Lógica de la Aplicación con Almacenamiento Local (localStorage) -->
   <script>
-    // Estado por defecto completamente limpio (sin ejemplos de prueba)
+    const defaultWhitelist = [
+      { email: 'alexis.leon@capacitacionesalr.com', cedula: '4-700-123', name: 'Alexis León Rivera', role: 'admin' },
+      { email: 'carlos.mendoza@student.com', cedula: '8-900-456', name: 'Carlos Mendoza', role: 'student' },
+      { email: 'ana.gomez@student.com', cedula: '2-500-789', name: 'Ana Gómez', role: 'student' }
+    ];
+
     const defaultState = {
       user: null,
       activeTab: 'muro',
       menuOpen: false,
+      whitelist: defaultWhitelist,
       posts: [],
       modules: [],
       presentations: [],
@@ -28,6 +34,7 @@
     };
 
     let state = JSON.parse(localStorage.getItem('alr_app_state')) || defaultState;
+    if (!state.whitelist) state.whitelist = defaultWhitelist;
     state.user = null;
     state.activeTab = 'muro';
     state.menuOpen = false;
@@ -36,12 +43,6 @@
       localStorage.setItem('alr_app_state', JSON.stringify(state));
     }
 
-    const whitelist = [
-      { email: 'alexis.leon@capacitacionesalr.com', cedula: '4-700-123', name: 'Alexis León Rivera', role: 'admin' },
-      { email: 'carlos.mendoza@student.com', cedula: '8-900-456', name: 'Carlos Mendoza', role: 'student' },
-      { email: 'ana.gomez@student.com', cedula: '2-500-789', name: 'Ana Gómez', role: 'student' }
-    ];
-
     let loginErrorMsg = '';
 
     function handleLogin(event) {
@@ -49,7 +50,7 @@
       const email = document.getElementById('emailInput').value.trim();
       const cedula = document.getElementById('cedulaInput').value.trim();
 
-      const found = whitelist.find(u => u.email.toLowerCase() === email.toLowerCase() && u.cedula === cedula);
+      const found = state.whitelist.find(u => u.email.toLowerCase() === email.toLowerCase() && u.cedula === cedula);
       if (found) {
         state.user = found;
         state.activeTab = 'muro';
@@ -74,9 +75,55 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function toggleMenu() {
+    function toggleMenu(event) {
+      if (event) event.stopPropagation();
       state.menuOpen = !state.menuOpen;
       render();
+    }
+
+    // Cerrar el menú si se hace clic fuera de él
+    function handleOutsideClick(event) {
+      if (state.menuOpen) {
+        const menuEl = document.getElementById('dropdownMenu');
+        const btnEl = document.getElementById('menuBtn');
+        if (menuEl && !menuEl.contains(event.target) && btnEl && !btnEl.contains(event.target)) {
+          state.menuOpen = false;
+          render();
+        }
+      }
+    }
+
+    function addStudent(event) {
+      event.preventDefault();
+      const name = document.getElementById('studentName').value.trim();
+      const email = document.getElementById('studentEmail').value.trim();
+      const cedula = document.getElementById('studentCedula').value.trim();
+
+      if (!name || !email || !cedula) return alert('Por favor completa todos los campos.');
+
+      const exists = state.whitelist.some(u => u.email.toLowerCase() === email.toLowerCase() || u.cedula === cedula);
+      if (exists) {
+        alert('Este correo o número de cédula ya se encuentra registrado.');
+        return;
+      }
+
+      state.whitelist.push({
+        email: email,
+        cedula: cedula,
+        name: name,
+        role: 'student'
+      });
+      saveState();
+      render();
+      alert(`¡Estudiante ${name} agregado con éxito a la lista autorizada!`);
+    }
+
+    function deleteStudent(email) {
+      if (confirm('¿Deseas revocar el acceso a este estudiante?')) {
+        state.whitelist = state.whitelist.filter(u => u.email !== email);
+        saveState();
+        render();
+      }
     }
 
     function addPost(event) {
@@ -204,7 +251,7 @@
         desc: desc,
         dueDate: dueDate,
         status: 'Pendiente',
-        grade: null,
+        grades: {}, // Almacena notas por email de estudiante
         url: url
       });
       saveState();
@@ -224,10 +271,19 @@
       alert('¡Tarea enviada con éxito! Calificación automática generada: 100 pts.');
       const t = state.tasks.find(item => item.id === taskId);
       if (t) {
-        t.status = 'Completada';
-        t.grade = 100;
+        if (!t.grades) t.grades = {};
+        t.grades[state.user.email] = 100;
         saveState();
         render();
+      }
+    }
+
+    function updateGradeAdmin(taskId, studentEmail, val) {
+      const t = state.tasks.find(item => item.id === taskId);
+      if (t) {
+        if (!t.grades) t.grades = {};
+        t.grades[studentEmail] = val === '' ? null : Number(val);
+        saveState();
       }
     }
 
@@ -355,7 +411,7 @@
               </button>
 
               <!-- Botón de Menú Hamburguesa (3 líneas) a la mano derecha -->
-              <button onclick="toggleMenu()" class="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg focus:outline-none flex flex-col justify-center items-center w-9 h-9 space-y-1">
+              <button id="menuBtn" onclick="toggleMenu(event)" class="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg focus:outline-none flex flex-col justify-center items-center w-9 h-9 space-y-1">
                 <span class="block w-5 h-0.5 bg-white"></span>
                 <span class="block w-5 h-0.5 bg-white"></span>
                 <span class="block w-5 h-0.5 bg-white"></span>
@@ -365,7 +421,7 @@
 
           <!-- Menú desplegable estilo hamburguesa -->
           ${state.menuOpen ? `
-            <div class="absolute top-full right-4 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-slate-200 py-2 z-50 text-slate-800">
+            <div id="dropdownMenu" class="absolute top-full right-4 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-slate-200 py-2 z-50 text-slate-800">
               <div class="px-4 py-2 border-b border-slate-100 sm:hidden">
                 <p class="text-xs font-bold">${state.user.name}</p>
                 <p class="text-[10px] text-slate-500 uppercase">${state.user.role === 'admin' ? 'Capacitador / Admin' : 'Estudiante'}</p>
@@ -378,6 +434,10 @@
               <button onclick="setTab('preguntas')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'preguntas' ? 'text-emerald-700 bg-emerald-50' : ''}">❓ Preguntas</button>
               <button onclick="setTab('fototeca')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'fototeca' ? 'text-emerald-700 bg-emerald-50' : ''}">📷 Fototeca</button>
               
+              ${state.user.role === 'admin' ? `
+                <button onclick="setTab('estudiantes')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 border-t border-slate-100 ${state.activeTab === 'estudiantes' ? 'text-emerald-700 bg-emerald-50' : ''}">👥 Gestión de Grupo</button>
+              ` : ''}
+
               <div class="border-t border-slate-100 mt-1 pt-1 sm:hidden">
                 ${state.user.role === 'admin' ? `
                   <button onclick="resetSalonData()" class="w-full text-left px-4 py-2 text-xs font-semibold text-amber-600 hover:bg-amber-50">🔄 Resetear Salón</button>
@@ -400,6 +460,58 @@
     }
 
     function renderTabContent() {
+      if (state.activeTab === 'estudiantes' && state.user.role === 'admin') {
+        const studentsList = state.whitelist.filter(u => u.role === 'student');
+        return `
+          <div class="space-y-6">
+            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-5 shadow-sm">
+              <h3 class="text-xs font-bold text-emerald-900 uppercase mb-3">➕ Registrar Nuevo Estudiante (Panel de Administrador)</h3>
+              <form onsubmit="addStudent(event)" class="space-y-3">
+                <div class="grid gap-3 sm:grid-cols-3">
+                  <input type="text" id="studentName" required placeholder="Nombre completo" class="p-2 border rounded text-xs bg-white">
+                  <input type="email" id="studentEmail" required placeholder="Correo electrónico" class="p-2 border rounded text-xs bg-white">
+                  <input type="text" id="studentCedula" required placeholder="Número de cédula (ej. 8-900-456)" class="p-2 border rounded text-xs bg-white">
+                </div>
+                <div class="flex justify-end">
+                  <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold shadow">Registrar Estudiante</button>
+                </div>
+              </form>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+              <h3 class="text-sm font-bold text-slate-900">Estudiantes Autorizados en el Grupo</h3>
+              <p class="text-xs text-slate-500">Solo los usuarios registrados en esta lista podrán ingresar al campus virtual.</p>
+              ${studentsList.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay estudiantes registrados todavía.</p>' : `
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-xs text-slate-600">
+                    <thead class="bg-slate-50 text-slate-700 uppercase text-[9px]">
+                      <tr>
+                        <th class="py-2.5 px-3">Nombre</th>
+                        <th class="py-2.5 px-3">Correo Electrónico</th>
+                        <th class="py-2.5 px-3">Cédula</th>
+                        <th class="py-2.5 px-3 text-center">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                      ${studentsList.map(st => `
+                        <tr>
+                          <td class="py-2.5 px-3 font-bold text-slate-800">${st.name}</td>
+                          <td class="py-2.5 px-3">${st.email}</td>
+                          <td class="py-2.5 px-3">${st.cedula}</td>
+                          <td class="py-2.5 px-3 text-center">
+                            <button onclick="deleteStudent('${st.email}')" class="text-red-600 hover:underline font-semibold">Eliminar</button>
+                          </td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              `}
+            </div>
+          </div>
+        `;
+      }
+
       if (state.activeTab === 'muro') {
         return `
           <div class="space-y-6">
@@ -495,7 +607,6 @@
         return `
           <div class="space-y-6">
             ${state.user.role === 'admin' ? `
-              <!-- Panel de Administrador en Gama de Rojos -->
               <div class="bg-red-50 border border-red-200 rounded-xl p-5 shadow-sm">
                 <h3 class="text-xs font-bold text-red-900 uppercase mb-3">➕ Cargar Nueva Clase (Panel de Administrador)</h3>
                 <form onsubmit="addPresentation(event)" class="space-y-3">
@@ -512,7 +623,6 @@
               </div>
             ` : ''}
 
-            <!-- Listado de Clases PPT en Gama de Rojos -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
               <h3 class="text-sm font-bold text-slate-900">Presentaciones de Clase (PPT)</h3>
               <p class="text-xs text-slate-500">Material visual de las clases para visualizar en línea o descargar.</p>
@@ -561,25 +671,28 @@
               <p class="text-xs text-slate-500 mb-4">Consulta las tareas y sube tus reportes en PDF directamente a la carpeta oficial.</p>
               ${state.tasks.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay tareas asignadas por el momento.</p>' : `
                 <div class="space-y-4">
-                  ${state.tasks.map(t => `
-                    <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative">
-                      ${state.user.role === 'admin' ? `<button onclick="deleteTask(${t.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs" title="Eliminar tarea">🗑️</button>` : ''}
-                      <div>
-                        <div class="flex items-center space-x-2">
-                          <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${t.status === 'Completada' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${t.status}</span>
-                          <span class="text-[10px] text-slate-400">📅 Entrega: ${t.dueDate}</span>
+                  ${state.tasks.map(t => {
+                    const myGrade = t.grades && t.grades[state.user.email] !== undefined ? t.grades[state.user.email] : null;
+                    return `
+                      <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative">
+                        ${state.user.role === 'admin' ? `<button onclick="deleteTask(${t.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs" title="Eliminar tarea">🗑️</button>` : ''}
+                        <div>
+                          <div class="flex items-center space-x-2">
+                            <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${myGrade !== null ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${myGrade !== null ? 'Completada' : 'Pendiente'}</span>
+                            <span class="text-[10px] text-slate-400">📅 Entrega: ${t.dueDate}</span>
+                          </div>
+                          <h4 class="font-bold text-slate-900 text-xs mt-1 pr-6">${t.title}</h4>
+                          <p class="text-[11px] text-slate-600 mt-0.5">${t.desc || ''}</p>
+                          ${myGrade !== null ? `<p class="text-[11px] text-emerald-600 font-bold mt-1">Calificación Obtenida: ${myGrade} / 100 pts</p>` : ''}
                         </div>
-                        <h4 class="font-bold text-slate-900 text-xs mt-1 pr-6">${t.title}</h4>
-                        <p class="text-[11px] text-slate-600 mt-0.5">${t.desc || ''}</p>
-                        ${t.grade !== null ? `<p class="text-[11px] text-emerald-600 font-bold mt-1">Calificación: ${t.grade} / 100 pts</p>` : ''}
+                        <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                          <a href="${t.url}" target="_blank" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded text-xs font-semibold">📄 Ver Tarea</a>
+                          <a href="https://drive.google.com/drive/folders/1DeIHSbZiiSidRHdvJmyPRBpy8VT3WFTP" target="_blank" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">📤 Cargar Tarea (PDF)</a>
+                          <button onclick="submitTask(${t.id})" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold">✅ Marcar Entregada</button>
+                        </div>
                       </div>
-                      <div class="flex flex-wrap gap-2 w-full sm:w-auto">
-                        <a href="${t.url}" target="_blank" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded text-xs font-semibold">📄 Ver Tarea</a>
-                        <a href="https://drive.google.com/drive/folders/1DeIHSbZiiSidRHdvJmyPRBpy8VT3WFTP" target="_blank" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">📤 Cargar Tarea (PDF)</a>
-                        <button onclick="submitTask(${t.id})" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold">✅ Marcar Entregada</button>
-                      </div>
-                    </div>
-                  `).join('')}
+                    `;
+                  }).join('')}
                 </div>
               `}
             </div>
@@ -588,23 +701,44 @@
       }
 
       if (state.activeTab === 'calificaciones') {
+        const studentsList = state.whitelist.filter(u => u.role === 'student');
         return `
           <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
-            <h3 class="text-sm font-bold text-slate-900">Registro de Calificaciones Automáticas</h3>
-            <p class="text-xs text-slate-500">Evaluación en tiempo real del salón actual.</p>
+            <h3 class="text-sm font-bold text-slate-900">Registro de Calificaciones del Grupo</h3>
+            <p class="text-xs text-slate-500">${state.user.role === 'admin' ? 'Vista de Administrador: Calificaciones detalladas por estudiante.' : 'Vista de Estudiante: Notas del grupo de forma anónima.'}</p>
+            
             ${state.tasks.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">Aún no hay tareas registradas para mostrar calificaciones.</p>' : `
               <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs text-slate-600">
                   <thead class="bg-slate-50 text-slate-700 uppercase text-[9px]">
                     <tr>
                       <th class="py-2.5 px-3">Estudiante</th>
-                      <th class="py-2.5 px-3 text-center">Estado General</th>
+                      ${state.tasks.map(t => `<th class="py-2.5 px-3 text-center">${t.title.split(':')[0]}</th>`).join('')}
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100">
-                    <tr><td class="py-2.5 px-3 font-bold">Carlos Mendoza</td><td class="text-center font-bold text-emerald-600">En curso</td></tr>
-                    <tr><td class="py-2.5 px-3 font-bold">Ana Gómez</td><td class="text-center font-bold text-emerald-600">En curso</td></tr>
-                    <tr><td class="py-2.5 px-3 font-bold">${state.user.name} (Tú)</td><td class="text-center font-bold text-emerald-600">Activo</td></tr>
+                    ${studentsList.map((st, idx) => {
+                      // Si es admin ve nombres reales; si es estudiante ve nombres anónimos ("Estudiante 1", etc.) o su propio nombre real
+                      const displayName = state.user.role === 'admin' ? st.name : (st.email === state.user.email ? `${st.name} (Tú)` : `Estudiante ${idx + 1}`);
+                      const isMe = st.email === state.user.email;
+                      return `
+                        <tr class="${isMe && state.user.role !== 'admin' ? 'bg-emerald-50/50 font-semibold' : ''}">
+                          <td class="py-2.5 px-3 font-bold text-slate-800">${displayName}</td>
+                          ${state.tasks.map(t => {
+                            const gradeVal = t.grades && t.grades[st.email] !== undefined && t.grades[st.email] !== null ? t.grades[st.email] : '-';
+                            if (state.user.role === 'admin') {
+                              return `
+                                <td class="py-2.5 px-3 text-center">
+                                  <input type="number" min="0" max="100" value="${gradeVal === '-' ? '' : gradeVal}" onchange="updateGradeAdmin(${t.id}, '${st.email}', this.value)" class="w-16 p-1 border rounded text-center text-xs bg-white font-bold text-emerald-600" placeholder="-">
+                                </td>
+                              `;
+                            } else {
+                              return `<td class="py-2.5 px-3 text-center font-bold text-emerald-600">${gradeVal}</td>`;
+                            }
+                          }).join('')}
+                        </tr>
+                      `;
+                    }).join('')}
                   </tbody>
                 </table>
               </div>
