@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="scroll-smooth">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -310,9 +310,9 @@
         return;
       }
 
+      // Estructura sin elementos fijos independientes: todo fluye de manera unificada
       app.innerHTML = `
-        <!-- Barra superior fija -->
-        <header class="bg-slate-900 text-white shadow sticky top-0 z-50 w-full">
+        <header class="bg-slate-900 text-white shadow w-full">
           <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-3">
               <div class="bg-emerald-600 p-2 rounded-lg font-bold">🛡️</div>
@@ -338,8 +338,8 @@
           </div>
         </header>
 
-        <!-- Menú de navegación fijo debajo de la barra -->
-        <nav class="bg-white border-b border-slate-200 shadow-sm sticky top-[57px] z-40 w-full overflow-x-auto">
+        <!-- Menú de navegación integrado en el flujo natural de la página -->
+        <nav class="bg-white border-b border-slate-200 shadow-sm w-full overflow-x-auto">
           <div class="max-w-7xl mx-auto px-4 flex space-x-4 whitespace-nowrap">
             <button onclick="setTab('muro')" class="py-3 px-3 text-xs font-semibold border-b-2 ${state.activeTab === 'muro' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-600'}">💬 Muro Social</button>
             <button onclick="setTab('modulos')" class="py-3 px-3 text-xs font-semibold border-b-2 ${state.activeTab === 'modulos' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-600'}">📚 Módulos y PDFs</button>
@@ -350,8 +350,8 @@
           </div>
         </nav>
 
-        <!-- Contenido principal que se desliza de manera natural -->
-        <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 my-auto">
+        <!-- Contenido principal que sube y baja junto con la cabecera y el menú -->
+        <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6">
           ${renderTabContent()}
         </main>
 
