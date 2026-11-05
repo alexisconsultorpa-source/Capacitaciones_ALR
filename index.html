@@ -36,9 +36,9 @@
         { id: 3, course: 'Capacitador Operativo', title: 'Módulo 3: DNC y Diseño Instruccional Operativo', desc: 'Aplicación del Pareto 80/20, Hojas HDT y alineación con normas INADEH.', url: '#' }
       ],
       tasks: [
-        { id: 1, title: 'Tarea 1: Matriz de Diagnóstico Sistémico y Mapeo en EDS', dueDate: 'Viernes, 11:59 PM', status: 'Pendiente', grade: null },
-        { id: 2, title: 'Tarea 2: Bitácora de Campo de Mentoría y Arquetipos', dueDate: 'Viernes, 11:59 PM', status: 'Pendiente', grade: null },
-        { id: 3, title: 'Tarea 3: Diseño de Hoja de Descomposición de Trabajo (HDT)', dueDate: 'Viernes, 11:59 PM', status: 'Pendiente', grade: null }
+        { id: 1, title: 'Tarea 1: Matriz de Diagnóstico Sistémico y Mapeo en EDS', desc: 'Realizar el levantamiento de procesos y mapeo operativo en pista.', dueDate: 'Viernes, 11:59 PM', status: 'Pendiente', grade: null, url: '#' },
+        { id: 2, title: 'Tarea 2: Bitácora de Campo de Mentoría y Arquetipos', desc: 'Completar registros de acompañamiento par a par.', dueDate: 'Viernes, 11:59 PM', status: 'Pendiente', grade: null, url: '#' },
+        { id: 3, title: 'Tarea 3: Diseño de Hoja de Descomposición de Trabajo (HDT)', desc: 'Desglose técnico de operaciones críticas.', dueDate: 'Viernes, 11:59 PM', status: 'Pendiente', grade: null, url: '#' }
       ],
       questions: [
         { id: 1, student: 'María Rodríguez', question: '¿Cómo procedo si el administrador de la estación no puede firmar la bitácora el viernes?', answer: 'Puedes programar la firma para primera hora del lunes siguiente notificándolo previamente por este medio.', answered: true }
@@ -166,6 +166,37 @@
     function deleteModule(id) {
       if (confirm('¿Deseas eliminar este módulo?')) {
         state.modules = state.modules.filter(m => m.id !== id);
+        saveState();
+        render();
+      }
+    }
+
+    function addTask(event) {
+      event.preventDefault();
+      const title = document.getElementById('taskTitle').value.trim();
+      const dueDate = document.getElementById('taskDueDate').value.trim();
+      const desc = document.getElementById('taskDesc').value.trim();
+      const url = document.getElementById('taskUrl').value.trim();
+
+      if (!title || !dueDate || !url) return alert('Por favor completa los campos obligatorios.');
+
+      state.tasks.push({
+        id: Date.now(),
+        title: title,
+        desc: desc,
+        dueDate: dueDate,
+        status: 'Pendiente',
+        grade: null,
+        url: url
+      });
+      saveState();
+      render();
+      alert('¡Tarea cargada con éxito!');
+    }
+
+    function deleteTask(id) {
+      if (confirm('¿Deseas eliminar esta tarea?')) {
+        state.tasks = state.tasks.filter(t => t.id !== id);
         saveState();
         render();
       }
@@ -386,7 +417,7 @@
                     <input type="text" id="modCourse" required placeholder="Nombre del Programa (ej. Supervisor EDS)" class="p-2 border rounded text-xs bg-white">
                   </div>
                   <textarea id="modDesc" rows="2" placeholder="Breve descripción del contenido..." class="w-full p-2 border rounded text-xs bg-white resize-none"></textarea>
-                  <input type="text" id="modUrl" required placeholder="Enlace web del archivo (ej. Google Drive, OneDrive o PDF)" class="w-full p-2 border rounded text-xs bg-white">
+                  <input type="text" id="modUrl" required placeholder="Enlace web del archivo (ej. Google Drive o PDF)" class="w-full p-2 border rounded text-xs bg-white">
                   <div class="flex justify-end">
                     <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold shadow">Cargar Módulo</button>
                   </div>
@@ -418,6 +449,23 @@
       if (state.activeTab === 'tareas') {
         return `
           <div class="space-y-6">
+            ${state.user.role === 'admin' ? `
+              <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 shadow-sm">
+                <h3 class="text-xs font-bold text-blue-900 uppercase mb-3">➕ Cargar Nueva Tarea / Entregable (Panel de Administrador)</h3>
+                <form onsubmit="addTask(event)" class="space-y-3">
+                  <div class="grid gap-3 sm:grid-cols-2">
+                    <input type="text" id="taskTitle" required placeholder="Título de la Tarea (ej. Tarea 4: Auditoría)" class="p-2 border rounded text-xs bg-white">
+                    <input type="text" id="taskDueDate" required placeholder="Fecha límite (ej. Viernes, 11:59 PM)" class="p-2 border rounded text-xs bg-white">
+                  </div>
+                  <textarea id="taskDesc" rows="2" placeholder="Instrucciones o descripción de la tarea..." class="w-full p-2 border rounded text-xs bg-white resize-none"></textarea>
+                  <input type="text" id="taskUrl" required placeholder="Enlace web de la tarea (ej. Documento guía en Drive o PDF)" class="w-full p-2 border rounded text-xs bg-white">
+                  <div class="flex justify-end">
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold shadow">Cargar Tarea</button>
+                  </div>
+                </form>
+              </div>
+            ` : ''}
+
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <h3 class="text-sm font-bold text-slate-900 mb-1">Formatos de Reporte en Word (.docx) o PDF</h3>
               <p class="text-xs text-slate-500 mb-4">Plantillas oficiales para actividades de campo.</p>
@@ -439,16 +487,25 @@
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <h3 class="text-sm font-bold text-slate-900 mb-1">Entregables y Tareas de Campo</h3>
-              <p class="text-xs text-slate-500 mb-4">Sube tus reportes y obtén calificación automática.</p>
-              <div class="space-y-3">
+              <p class="text-xs text-slate-500 mb-4">Consulta las tareas y sube tus reportes en PDF directamente a la carpeta oficial.</p>
+              <div class="space-y-4">
                 ${state.tasks.map(t => `
-                  <div class="border border-slate-200 rounded-lg p-3 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative">
+                    ${state.user.role === 'admin' ? `<button onclick="deleteTask(${t.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs" title="Eliminar tarea">🗑️</button>` : ''}
                     <div>
-                      <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${t.status === 'Completada' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${t.status}</span>
-                      <h4 class="font-bold text-slate-900 text-xs mt-1">${t.title}</h4>
-                      ${t.grade !== null ? `<p class="text-[11px] text-emerald-600 font-bold mt-0.5">Calificación: ${t.grade} / 100 pts</p>` : ''}
+                      <div class="flex items-center space-x-2">
+                        <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${t.status === 'Completada' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${t.status}</span>
+                        <span class="text-[10px] text-slate-400">📅 Entrega: ${t.dueDate}</span>
+                      </div>
+                      <h4 class="font-bold text-slate-900 text-xs mt-1 pr-6">${t.title}</h4>
+                      <p class="text-[11px] text-slate-600 mt-0.5">${t.desc || ''}</p>
+                      ${t.grade !== null ? `<p class="text-[11px] text-emerald-600 font-bold mt-1">Calificación: ${t.grade} / 100 pts</p>` : ''}
                     </div>
-                    <button onclick="submitTask(${t.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-xs font-semibold whitespace-nowrap">Enviar y Calificar</button>
+                    <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                      <a href="${t.url !== '#' ? t.url : '#'}" target="_blank" onclick="${t.url === '#' ? "alert('Abriendo guía de tarea...'); return false;" : ""}" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded text-xs font-semibold">📄 Ver Tarea</a>
+                      <a href="https://drive.google.com/drive/folders/1DeIHSbZiiSidRHdvJmyPRBpy8VT3WFTP" target="_blank" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">📤 Cargar Tarea (PDF)</a>
+                      <button onclick="submitTask(${t.id})" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold">✅ Marcar Entregada</button>
+                    </div>
                   </div>
                 `).join('')}
               </div>
@@ -476,7 +533,7 @@
                 <tbody class="divide-y divide-slate-100">
                   <tr><td class="py-2.5 px-3 font-bold">Carlos Mendoza</td><td class="text-center">100</td><td class="text-center">90</td><td class="text-center">95</td><td class="text-center font-bold text-emerald-600">95 pts</td></tr>
                   <tr><td class="py-2.5 px-3 font-bold">Ana Gómez</td><td class="text-center">85</td><td class="text-center">90</td><td class="text-center">90</td><td class="text-center font-bold text-emerald-600">88 pts</td></tr>
-                  <tr><td class="py-2.5 px-3 font-bold">${state.user.name} (Tú)</td><td class="text-center">${state.tasks[0].grade || 0}</td><td class="text-center">${state.tasks[1].grade || 0}</td><td class="text-center">${state.tasks[2].grade || 0}</td><td class="text-center font-bold text-emerald-600">92 pts</td></tr>
+                  <tr><td class="py-2.5 px-3 font-bold">${state.user.name} (Tú)</td><td class="text-center">${state.tasks[0]?.grade || 0}</td><td class="text-center">${state.tasks[1]?.grade || 0}</td><td class="text-center">${state.tasks[2]?.grade || 0}</td><td class="text-center font-bold text-emerald-600">92 pts</td></tr>
                 </tbody>
               </table>
             </div>
