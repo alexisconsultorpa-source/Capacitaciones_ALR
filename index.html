@@ -16,7 +16,8 @@
   <script>
     const defaultState = {
       user: null,
-      activeTab: 'muro', // Inicia por defecto en el muro social
+      activeTab: 'muro',
+      menuOpen: false, // Estado para abrir/cerrar el menú de 3 líneas
       posts: [
         {
           id: 1,
@@ -54,7 +55,8 @@
 
     let state = JSON.parse(localStorage.getItem('alr_app_state')) || defaultState;
     state.user = null;
-    state.activeTab = 'muro'; // Forzar que al refrescar siempre inicie en el muro social
+    state.activeTab = 'muro';
+    state.menuOpen = false;
 
     function saveState() {
       localStorage.setItem('alr_app_state', JSON.stringify(state));
@@ -76,7 +78,8 @@
       const found = whitelist.find(u => u.email.toLowerCase() === email.toLowerCase() && u.cedula === cedula);
       if (found) {
         state.user = found;
-        state.activeTab = 'muro'; // Asegurar que entra al muro al iniciar sesión
+        state.activeTab = 'muro';
+        state.menuOpen = false;
         loginErrorMsg = '';
         render();
       } else {
@@ -92,8 +95,14 @@
 
     function setTab(tab) {
       state.activeTab = tab;
+      state.menuOpen = false; // Cerrar el menú al seleccionar una opción
       render();
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function toggleMenu() {
+      state.menuOpen = !state.menuOpen;
+      render();
     }
 
     function addPost(event) {
@@ -195,11 +204,11 @@
       });
       saveState();
       render();
-      alert('¡Presentación PPT cargada con éxito!');
+      alert('¡Clase PPT cargada con éxito!');
     }
 
     function deletePresentation(id) {
-      if (confirm('¿Deseas eliminar esta presentación?')) {
+      if (confirm('¿Deseas eliminar esta clase PPT?')) {
         state.presentations = state.presentations.filter(p => p.id !== id);
         saveState();
         render();
@@ -300,6 +309,7 @@
         state = JSON.parse(JSON.stringify(defaultState));
         state.user = { name: 'Alexis León Rivera', role: 'admin', email: 'alexis.leon@capacitacionesalr.com' };
         state.activeTab = 'muro';
+        state.menuOpen = false;
         render();
         alert('¡Salón reiniciado con éxito para un nuevo grupo!');
       }
@@ -346,7 +356,7 @@
       }
 
       app.innerHTML = `
-        <header class="bg-slate-900 text-white shadow w-full">
+        <header class="bg-slate-900 text-white shadow w-full relative">
           <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-3">
               <div class="bg-emerald-600 p-2 rounded-lg font-bold">🛡️</div>
@@ -355,35 +365,55 @@
                 <span class="text-[10px] text-emerald-400">Portal Educativo Oficial</span>
               </div>
             </div>
+
+            <!-- Controles a la derecha (Botón reset, usuario, salir y menú hamburguesa de 3 líneas) -->
             <div class="flex items-center space-x-3">
               ${state.user.role === 'admin' ? `
-                <button onclick="resetSalonData()" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1.5 rounded text-[11px] font-semibold transition" title="Limpiar datos para nuevo salón">
+                <button onclick="resetSalonData()" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1.5 rounded text-[11px] font-semibold transition hidden sm:inline-block" title="Limpiar datos para nuevo salón">
                   🔄 Resetear Salón
                 </button>
               ` : ''}
-              <div class="text-right hidden sm:block">
+              <div class="text-right hidden md:block">
                 <p class="text-xs font-bold text-slate-200">${state.user.name}</p>
                 <p class="text-[9px] text-slate-400 uppercase">${state.user.role === 'admin' ? 'Capacitador / Admin' : 'Estudiante'}</p>
               </div>
-              <button onclick="logout()" class="bg-slate-800 hover:bg-red-600 text-slate-300 hover:text-white px-3 py-1.5 rounded text-xs transition">
+              <button onclick="logout()" class="bg-slate-800 hover:bg-red-600 text-slate-300 hover:text-white px-3 py-1.5 rounded text-xs transition hidden sm:inline-block">
                 Salir
+              </button>
+
+              <!-- Botón de Menú Hamburguesa (3 líneas) a la mano derecha -->
+              <button onclick="toggleMenu()" class="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg focus:outline-none flex flex-col justify-center items-center w-9 h-9 space-y-1">
+                <span class="block w-5 h-0.5 bg-white"></span>
+                <span class="block w-5 h-0.5 bg-white"></span>
+                <span class="block w-5 h-0.5 bg-white"></span>
               </button>
             </div>
           </div>
-        </header>
 
-        <!-- Menú de navegación integrado -->
-        <nav class="bg-white border-b border-slate-200 shadow-sm w-full overflow-x-auto">
-          <div class="max-w-7xl mx-auto px-4 flex space-x-4 whitespace-nowrap">
-            <button onclick="setTab('muro')" class="py-3 px-3 text-xs font-semibold border-b-2 ${state.activeTab === 'muro' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-600'}">💬 Muro Social</button>
-            <button onclick="setTab('modulos')" class="py-3 px-3 text-xs font-semibold border-b-2 ${state.activeTab === 'modulos' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-600'}">📚 Módulos y PDFs</button>
-            <button onclick="setTab('ppt')" class="py-3 px-3 text-xs font-semibold border-b-2 ${state.activeTab === 'ppt' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-600'}">📊 Clase PPT</button>
-            <button onclick="setTab('tareas')" class="py-3 px-3 text-xs font-semibold border-b-2 ${state.activeTab === 'tareas' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-600'}">📝 Tareas y Word</button>
-            <button onclick="setTab('calificaciones')" class="py-3 px-3 text-xs font-semibold border-b-2 ${state.activeTab === 'calificaciones' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-600'}">🏆 Calificaciones</button>
-            <button onclick="setTab('preguntas')" class="py-3 px-3 text-xs font-semibold border-b-2 ${state.activeTab === 'preguntas' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-600'}">❓ Preguntas</button>
-            <button onclick="setTab('fototeca')" class="py-3 px-3 text-xs font-semibold border-b-2 ${state.activeTab === 'fototeca' ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-600'}">📷 Fototeca</button>
-          </div>
-        </nav>
+          <!-- Menú desplegable estilo hamburguesa -->
+          ${state.menuOpen ? `
+            <div class="absolute top-full right-4 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-slate-200 py-2 z-50 text-slate-800">
+              <div class="px-4 py-2 border-b border-slate-100 sm:hidden">
+                <p class="text-xs font-bold">${state.user.name}</p>
+                <p class="text-[10px] text-slate-500 uppercase">${state.user.role === 'admin' ? 'Capacitador / Admin' : 'Estudiante'}</p>
+              </div>
+              <button onclick="setTab('muro')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'muro' ? 'text-emerald-700 bg-emerald-50' : ''}">💬 Muro Social</button>
+              <button onclick="setTab('modulos')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'modulos' ? 'text-emerald-700 bg-emerald-50' : ''}">📚 Módulos y PDFs</button>
+              <button onclick="setTab('ppt')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'ppt' ? 'text-red-700 bg-red-50' : ''}">📊 Clase PPT</button>
+              <button onclick="setTab('tareas')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'tareas' ? 'text-emerald-700 bg-emerald-50' : ''}">📝 Tareas y Word</button>
+              <button onclick="setTab('calificaciones')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'calificaciones' ? 'text-emerald-700 bg-emerald-50' : ''}">🏆 Calificaciones</button>
+              <button onclick="setTab('preguntas')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'preguntas' ? 'text-emerald-700 bg-emerald-50' : ''}">❓ Preguntas</button>
+              <button onclick="setTab('fototeca')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'fototeca' ? 'text-emerald-700 bg-emerald-50' : ''}">📷 Fototeca</button>
+              
+              <div class="border-t border-slate-100 mt-1 pt-1 sm:hidden">
+                ${state.user.role === 'admin' ? `
+                  <button onclick="resetSalonData()" class="w-full text-left px-4 py-2 text-xs font-semibold text-amber-600 hover:bg-amber-50">🔄 Resetear Salón</button>
+                ` : ''}
+                <button onclick="logout()" class="w-full text-left px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50">🚪 Salir</button>
+              </div>
+            </div>
+          ` : ''}
+        </header>
 
         <!-- Contenido principal -->
         <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6">
@@ -489,35 +519,37 @@
         return `
           <div class="space-y-6">
             ${state.user.role === 'admin' ? `
-              <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-5 shadow-sm">
-                <h3 class="text-xs font-bold text-indigo-900 uppercase mb-3">➕ Cargar Nueva Presentación PPT (Panel de Administrador)</h3>
+              <!-- Panel de Administrador en Gama de Rojos -->
+              <div class="bg-red-50 border border-red-200 rounded-xl p-5 shadow-sm">
+                <h3 class="text-xs font-bold text-red-900 uppercase mb-3">➕ Cargar Nueva Clase (Panel de Administrador)</h3>
                 <form onsubmit="addPresentation(event)" class="space-y-3">
                   <div class="grid gap-3 sm:grid-cols-2">
-                    <input type="text" id="pptTitle" required placeholder="Título (ej. Presentación Sesión 1)" class="p-2 border rounded text-xs bg-white">
+                    <input type="text" id="pptTitle" required placeholder="Título de la Clase (ej. Presentación Sesión 1)" class="p-2 border rounded text-xs bg-white">
                     <input type="text" id="pptCourse" required placeholder="Programa (ej. Supervisor EDS)" class="p-2 border rounded text-xs bg-white">
                   </div>
                   <textarea id="pptDesc" rows="2" placeholder="Breve descripción de la clase PPT..." class="w-full p-2 border rounded text-xs bg-white resize-none"></textarea>
                   <input type="text" id="pptUrl" required placeholder="Enlace web PPT (ej. Google Drive, OneDrive o enlace de descarga)" class="w-full p-2 border rounded text-xs bg-white">
                   <div class="flex justify-end">
-                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold shadow">Cargar Presentación PPT</button>
+                    <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-semibold shadow">Cargar Clase</button>
                   </div>
                 </form>
               </div>
             ` : ''}
 
+            <!-- Listado de Clases PPT en Gama de Rojos -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
               <h3 class="text-sm font-bold text-slate-900">Presentaciones de Clase (PPT)</h3>
               <p class="text-xs text-slate-500">Material visual de las clases para visualizar en línea o descargar.</p>
               <div class="grid gap-4 sm:grid-cols-3">
                 ${state.presentations.map(ppt => `
                   <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col justify-between relative">
-                    ${state.user.role === 'admin' ? `<button onclick="deletePresentation(${ppt.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs" title="Eliminar presentación">🗑️</button>` : ''}
+                    ${state.user.role === 'admin' ? `<button onclick="deletePresentation(${ppt.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs" title="Eliminar clase">🗑️</button>` : ''}
                     <div>
-                      <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 mb-2 inline-block">${ppt.course}</span>
+                      <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-800 mb-2 inline-block">${ppt.course}</span>
                       <h4 class="font-bold text-slate-900 text-xs mb-1 pr-6">${ppt.title}</h4>
                       <p class="text-[11px] text-slate-600 mb-4">${ppt.desc}</p>
                     </div>
-                    <a href="${ppt.url !== '#' ? ppt.url : '#'}" target="_blank" onclick="${ppt.url === '#' ? "alert('Abriendo presentación PPT...'); return false;" : ""}" class="block text-center w-full py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold">📊 Ver Presentación PPT</a>
+                    <a href="${ppt.url !== '#' ? ppt.url : '#'}" target="_blank" onclick="${ppt.url === '#' ? "alert('Abriendo presentación PPT...'); return false;" : ""}" class="block text-center w-full py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-semibold">📊 Ver Clase PPT</a>
                   </div>
                 `).join('')}
               </div>
