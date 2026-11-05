@@ -1,770 +1,632 @@
-import React, { useState } from 'react';
-import {  
-  Shield, Users, BookOpen, FileText, HelpCircle, Camera, Award, 
-  MessageSquare, ThumbsUp, Trash2, Send, Download, CheckCircle, 
-  Clock, Lock, LogOut, UserCheck, PlusCircle, AlertCircle
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Capacitaciones ALR - Portal Web Privado</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React y ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel para compilar JSX en el navegador -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-100 font-sans">
+  <div id="root"></div>
 
-export default function CapacitacionesALRApp() {
-  // Estado de Autenticación simulada (Whitelisted por correo/cédula)
-  const [user, setUser] = useState(null);
-  const [emailInput, setEmailInput] = useState('');
-  const [cedulaInput, setCedulaInput] = useState('');
-  const [loginError, setLoginError] = useState('');
+  <script type="text/babel">
+    const { 
+      Shield, Users, BookOpen, FileText, HelpCircle, Camera, Award, 
+      MessageSquare, ThumbsUp, Trash2, Send, Download, CheckCircle, 
+      Clock, Lock, LogOut, UserCheck, PlusCircle, AlertCircle 
+    } = lucide;
 
-  // Navegación de pestañas principales
-  const [activeTab, setActiveTab] = useState('muro');
+    function CapacitacionesALRApp() {
+      const [user, setUser] = React.useState(null);
+      const [emailInput, setEmailInput] = React.useState('');
+      const [cedulaInput, setCedulaInput] = React.useState('');
+      const [loginError, setLoginError] = React.useState('');
+      const [activeTab, setActiveTab] = React.useState('muro');
 
-  // Base de datos simulada en memoria para la app
-  const [posts, setPosts] = useState([
-    {
-      id: 1,
-      author: 'Alexis León Rivera (Capacitador)',
-      role: 'admin',
-      content: '¡Bienvenidos a la cohorte oficial de Capacitaciones ALR! Recuerden revisar su cronograma de campo para esta semana.',
-      timestamp: 'Hace 2 horas',
-      likes: 5,
-      likedBy: [],
-      comments: [
-        { id: 101, author: 'Carlos Mendoza', role: 'student', content: '¡Entendido profesor! Listo para iniciar las prácticas.', timestamp: 'Hace 1 hora' }
-      ]
-    }
-  ]);
-  const [newPostContent, setNewPostContent] = useState('');
-  const [commentInputs, setCommentInputs] = useState({});
+      const [posts, setPosts] = React.useState([
+        {
+          id: 1,
+          author: 'Alexis León Rivera (Capacitador)',
+          role: 'admin',
+          content: '¡Bienvenidos a la cohorte oficial de Capacitaciones ALR! Recuerden revisar su cronograma de campo para esta semana.',
+          timestamp: 'Hace 2 horas',
+          likes: 5,
+          likedBy: [],
+          comments: [
+            { id: 101, author: 'Carlos Mendoza', role: 'student', content: '¡Entendido profesor! Listo para iniciar las prácticas.', timestamp: 'Hace 1 hora' }
+          ]
+        }
+      ]);
+      const [newPostContent, setNewPostContent] = React.useState('');
+      const [commentInputs, setCommentInputs] = React.useState({});
 
-  // Módulos (Incluye los 3 cursos: Supervisores, Mentores y Capacitadores)
-  const modulesData = [
-    { id: 1, course: 'Supervisor de EDS', title: 'Módulo 1: Enfoque Sistémico y Liderazgo en Pista', desc: 'Diagnóstico integral de los 5 sistemas organizacionales y estilos de dirección.', pdfName: 'Manual_Supervisor_Modulo_1.pdf' },
-    { id: 2, course: 'Mentor ALR', title: 'Módulo 2: El Rol del Mentor y Arquetipos de Apoyo', desc: 'Metodología de acompañamiento par a par y adaptación en tienda Super7.', pdfName: 'Manual_Mentor_Modulo_2.pdf' },
-    { id: 3, course: 'Capacitador Operativo', title: 'Módulo 3: DNC y Diseño Instruccional Operativo', desc: 'Aplicación del Pareto 80/20, Hojas HDT y alineación con normas INADEH.', pdfName: 'Manual_Capacitador_Modulo_3.pdf' }
-  ];
+      const modulesData = [
+        { id: 1, course: 'Supervisor de EDS', title: 'Módulo 1: Enfoque Sistémico y Liderazgo en Pista', desc: 'Diagnóstico integral de los 5 sistemas organizacionales y estilos de dirección.', pdfName: 'Manual_Supervisor_Modulo_1.pdf' },
+        { id: 2, course: 'Mentor ALR', title: 'Módulo 2: El Rol del Mentor y Arquetipos de Apoyo', desc: 'Metodología de acompañamiento par a par y adaptación en tienda Super7.', pdfName: 'Manual_Mentor_Modulo_2.pdf' },
+        { id: 3, course: 'Capacitador Operativo', title: 'Módulo 3: DNC y Diseño Instruccional Operativo', desc: 'Aplicación del Pareto 80/20, Hojas HDT y alineación con normas INADEH.', pdfName: 'Manual_Capacitador_Modulo_3.pdf' }
+      ];
 
-  // Tareas y Entregables
-  const [tasks, setTasks] = useState([
-    { id: 1, title: 'Tarea 1: Matriz de Diagnóstico Sistémico y Mapeo en EDS', dueDate: 'Viernes, 11:59 PM', status: 'Pendiente', grade: null },
-    { id: 2, title: 'Tarea 2: Bitácora de Campo de Mentoría y Arquetipos', dueDate: 'Viernes, 11:59 PM', status: 'Pendiente', grade: null },
-    { id: 3, title: 'Tarea 3: Diseño de Hoja de Descomposición de Trabajo (HDT)', dueDate: 'Viernes, 11:59 PM', status: 'Pendiente', grade: null }
-  ]);
-  const [selectedTaskFile, setSelectedTaskFile] = useState(null);
+      const [tasks, setTasks] = React.useState([
+        { id: 1, title: 'Tarea 1: Matriz de Diagnóstico Sistémico y Mapeo en EDS', dueDate: 'Viernes, 11:59 PM', status: 'Pendiente', grade: null },
+        { id: 2, title: 'Tarea 2: Bitácora de Campo de Mentoría y Arquetipos', dueDate: 'Viernes, 11:59 PM', status: 'Pendiente', grade: null },
+        { id: 3, title: 'Tarea 3: Diseño de Hoja de Descomposición de Trabajo (HDT)', dueDate: 'Viernes, 11:59 PM', status: 'Pendiente', grade: null }
+      ]);
 
-  // Formatos descargables en Word
-  const wordFormats = [
-    { id: 1, title: 'Formato Oficial de Bitácora de Campo (Word)', file: 'Bitacora_Campo_ALR.docx' },
-    { id: 2, title: 'Plantilla de Hoja de Descomposición de Trabajo - HDT (Word)', file: 'Plantilla_HDT_ALR.docx' },
-    { id: 3, title: 'Formato de Reporte de Incidencias y Hallazgos (Word)', file: 'Reporte_Incidencias_ALR.docx' }
-  ];
+      const wordFormats = [
+        { id: 1, title: 'Formato Oficial de Bitácora de Campo (Word)', file: 'Bitacora_Campo_ALR.docx' },
+        { id: 2, title: 'Plantilla de Hoja de Descomposición de Trabajo - HDT (Word)', file: 'Plantilla_HDT_ALR.docx' },
+        { id: 3, title: 'Formato de Reporte de Incidencias y Hallazgos (Word)', file: 'Reporte_Incidencias_ALR.docx' }
+      ];
 
-  // Preguntas Directas al Capacitador
-  const [questions, setQuestions] = useState([
-    { id: 1, student: 'María Rodríguez', question: '¿Cómo procedo si el administrador de la estación no puede firmar la bitácora el viernes?', answer: 'Puedes programar la firma para primera hora del lunes siguiente notificándolo previamente por este medio.', answered: true }
-  ]);
-  const [newQuestionText, setNewQuestionText] = useState('');
-  const [answerInputs, setAnswerInputs] = useState({});
+      const [questions, setQuestions] = React.useState([
+        { id: 1, student: 'María Rodríguez', question: '¿Cómo procedo si el administrador de la estación no puede firmar la bitácora el viernes?', answer: 'Puedes programar la firma para primera hora del lunes siguiente notificándolo previamente por este medio.', answered: true }
+      ]);
+      const [newQuestionText, setNewQuestionText] = React.useState('');
+      const [answerInputs, setAnswerInputs] = React.useState({});
 
-  // Fototeca de Campo
-  const [photos, setPhotos] = useState([
-    { id: 1, title: 'Práctica de Calibración con Serafín en Pista', author: 'Carlos Mendoza', url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80' },
-    { id: 2, title: 'Simulación de Auditoría y Servicio en Tienda Super7', author: 'Ana Gómez', url: 'https://images.unsplash.com/photo-1556740758-90de374c12ad?auto=format&fit=crop&w=600&q=80' }
-  ]);
-  const [newPhotoTitle, setNewPhotoTitle] = useState('');
-  const [newPhotoUrl, setNewPhotoUrl] = useState('');
+      const [photos, setPhotos] = React.useState([
+        { id: 1, title: 'Práctica de Calibración con Serafín en Pista', author: 'Carlos Mendoza', url: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80' },
+        { id: 2, title: 'Simulación de Auditoría y Servicio en Tienda Super7', author: 'Ana Gómez', url: 'https://images.unsplash.com/photo-1556740758-90de374c12ad?auto=format&fit=crop&w=600&q=80' }
+      ]);
+      const [newPhotoTitle, setNewPhotoTitle] = React.useState('');
+      const [newPhotoUrl, setNewPhotoUrl] = React.useState('');
 
-  // Calificaciones automáticas
-  const [gradesRoster, setGradesRoster] = useState([
-    { id: 1, name: 'Carlos Mendoza', t1: 100, t2: 90, t3: 95, finalAvg: 95 },
-    { id: 2, name: 'Ana Gómez', t1: 85, t2: 90, t3: 90, finalAvg: 88 },
-    { id: 3, name: 'Estudiante Actual (Tú)', t1: 0, t2: 0, t3: 0, finalAvg: 0 }
-  ]);
+      const [gradesRoster, setGradesRoster] = React.useState([
+        { id: 1, name: 'Carlos Mendoza', t1: 100, t2: 90, t3: 95, finalAvg: 95 },
+        { id: 2, name: 'Ana Gómez', t1: 85, t2: 90, t3: 90, finalAvg: 88 },
+        { id: 3, name: 'Estudiante Actual (Tú)', t1: 0, t2: 0, t3: 0, finalAvg: 0 }
+      ]);
 
-  // Manejador de Login con Lista Blanca
-  const handleLogin = (e) => {
-    e.preventDefault();
-    setLoginError('');
+      const handleLogin = (e) => {
+        e.preventDefault();
+        setLoginError('');
+        const whitelist = [
+          { email: 'alexis.leon@capacitacionesalr.com', cedula: '4-700-123', name: 'Alexis León Rivera', role: 'admin' },
+          { email: 'carlos.mendoza@student.com', cedula: '8-900-456', name: 'Carlos Mendoza', role: 'student' },
+          { email: 'ana.gomez@student.com', cedula: '2-500-789', name: 'Ana Gómez', role: 'student' }
+        ];
 
-    const whitelist = [
-      { email: 'alexis.leon@capacitacionesalr.com', cedula: '4-700-123', name: 'Alexis León Rivera', role: 'admin' },
-      { email: 'carlos.mendoza@student.com', cedula: '8-900-456', name: 'Carlos Mendoza', role: 'student' },
-      { email: 'ana.gomez@student.com', cedula: '2-500-789', name: 'Ana Gómez', role: 'student' }
-    ];
+        const found = whitelist.find(u => u.email.toLowerCase() === emailInput.toLowerCase() && u.cedula === cedulaInput);
+        if (found) {
+          setUser(found);
+        } else {
+          setLoginError('Correo o número de cédula no autorizado por el administrador o datos incorrectos.');
+        }
+      };
 
-    const found = whitelist.find(u => u.email.toLowerCase() === emailInput.toLowerCase() && u.cedula === cedulaInput);
+      const handleLogout = () => {
+        setUser(null);
+        setEmailInput('');
+        setCedulaInput('');
+      };
 
-    if (found) {
-      setUser(found);
-    } else {
-      setLoginError('Correo o número de cédula no autorizado por el administrador o datos incorrectos.');
-    }
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    setEmailInput('');
-    setCedulaInput('');
-  };
-
-  // Funciones del Muro Social
-  const handleCreatePost = (e) => {
-    e.preventDefault();
-    if (!newPostContent.trim()) return;
-
-    const newPost = {
-      id: Date.now(),
-      author: user.name + (user.role === 'admin' ? ' (Capacitador)' : ''),
-      role: user.role,
-      content: newPostContent,
-      timestamp: 'Justo ahora',
-      likes: 0,
-      likedBy: [],
-      comments: []
-    };
-
-    setPosts([newPost, ...posts]);
-    setNewPostContent('');
-  };
-
-  const handleDeletePost = (postId) => {
-    setPosts(posts.filter(p => p.id !== postId));
-  };
-
-  const handleLikePost = (postId) => {
-    setPosts(posts.map(p => {
-      if (p.id === postId) {
-        const hasLiked = p.likedBy.includes(user.email);
-        return {
-          ...p,
-          likes: hasLiked ? p.likes - 1 : p.likes + 1,
-          likedBy: hasLiked ? p.likedBy.filter(e => e !== user.email) : [...p.likedBy, user.email]
-        };
-      }
-      return p;
-    }));
-  };
-
-  const handleAddComment = (postId) => {
-    const text = commentInputs[postId];
-    if (!text || !text.trim()) return;
-
-    setPosts(posts.map(p => {
-      if (p.id === postId) {
-        const newComment = {
+      const handleCreatePost = (e) => {
+        e.preventDefault();
+        if (!newPostContent.trim()) return;
+        const newPost = {
           id: Date.now(),
-          author: user.name,
+          author: user.name + (user.role === 'admin' ? ' (Capacitador)' : ''),
           role: user.role,
-          content: text,
-          timestamp: 'Justo ahora'
+          content: newPostContent,
+          timestamp: 'Justo ahora',
+          likes: 0,
+          likedBy: [],
+          comments: []
         };
-        return { ...p, comments: [...p.comments, newComment] };
-      }
-      return p;
-    }));
+        setPosts([newPost, ...posts]);
+        setNewPostContent('');
+      };
 
-    setCommentInputs({ ...commentInputs, [postId]: '' });
-  };
+      const handleDeletePost = (postId) => {
+        setPosts(posts.filter(p => p.id !== postId));
+      };
 
-  const handleDeleteComment = (postId, commentId) => {
-    setPosts(posts.map(p => {
-      if (p.id === postId) {
-        return {
-          ...p,
-          comments: p.comments.filter(c => c.id !== commentId)
-        };
-      }
-      return p;
-    }));
-  };
+      const handleLikePost = (postId) => {
+        setPosts(posts.map(p => {
+          if (p.id === postId) {
+            const hasLiked = p.likedBy.includes(user.email);
+            return {
+              ...p,
+              likes: hasLiked ? p.likes - 1 : p.likes + 1,
+              likedBy: hasLiked ? p.likedBy.filter(e => e !== user.email) : [...p.likedBy, user.email]
+            };
+          }
+          return p;
+        }));
+      };
 
-  // Enviar Tarea y Calificación Automática
-  const handleSubmitTask = (taskId) => {
-    alert('¡Tarea enviada con éxito! El sistema ha generado su calificación automática (100 pts).');
-    setTasks(tasks.map(t => {
-      if (t.id === taskId) {
-        return { ...t, status: 'Completada', grade: 100 };
-      }
-      return t;
-    }));
+      const handleAddComment = (postId) => {
+        const text = commentInputs[postId];
+        if (!text || !text.trim()) return;
+        setPosts(posts.map(p => {
+          if (p.id === postId) {
+            const newComment = {
+              id: Date.now(),
+              author: user.name,
+              role: user.role,
+              content: text,
+              timestamp: 'Justo ahora'
+            };
+            return { ...p, comments: [...p.comments, newComment] };
+          }
+          return p;
+        }));
+        setCommentInputs({ ...commentInputs, [postId]: '' });
+      };
 
-    setGradesRoster(gradesRoster.map(g => {
-      if (g.name === 'Estudiante Actual (Tú)') {
-        const updatedT1 = taskId === 1 ? 100 : g.t1;
-        const updatedT2 = taskId === 2 ? 100 : g.t2;
-        const updatedT3 = taskId === 3 ? 100 : g.t3;
-        const avg = Math.round((updatedT1 + updatedT2 + updatedT3) / 3);
-        return { ...g, t1: updatedT1, t2: updatedT2, t3: updatedT3, finalAvg: avg };
-      }
-      return g;
-    }));
-  };
+      const handleDeleteComment = (postId, commentId) => {
+        setPosts(posts.map(p => {
+          if (p.id === postId) {
+            return {
+              ...p,
+              comments: p.comments.filter(c => c.id !== commentId)
+            };
+          }
+          return p;
+        }));
+      };
 
-  // Preguntas directas al capacitador
-  const handleCreateQuestion = (e) => {
-    e.preventDefault();
-    if (!newQuestionText.trim()) return;
+      const handleSubmitTask = (taskId) => {
+        alert('¡Tarea enviada con éxito! El sistema ha generado su calificación automática (100 pts).');
+        setTasks(tasks.map(t => t.id === taskId ? { ...t, status: 'Completada', grade: 100 } : t));
+        setGradesRoster(gradesRoster.map(g => {
+          if (g.name === 'Estudiante Actual (Tú)') {
+            const ut1 = taskId === 1 ? 100 : g.t1;
+            const ut2 = taskId === 2 ? 100 : g.t2;
+            const ut3 = taskId === 3 ? 100 : g.t3;
+            const avg = Math.round((ut1 + ut2 + ut3) / 3);
+            return { ...g, t1: ut1, t2: ut2, t3: ut3, finalAvg: avg };
+          }
+          return g;
+        }));
+      };
 
-    const q = {
-      id: Date.now(),
-      student: user.name,
-      question: newQuestionText,
-      answer: '',
-      answered: false
-    };
+      const handleCreateQuestion = (e) => {
+        e.preventDefault();
+        if (!newQuestionText.trim()) return;
+        const q = { id: Date.now(), student: user.name, question: newQuestionText, answer: '', answered: false };
+        setQuestions([...questions, q]);
+        setNewQuestionText('');
+      };
 
-    setQuestions([...questions, q]);
-    setNewQuestionText('');
-  };
+      const handleAnswerQuestion = (qId) => {
+        const ans = answerInputs[qId];
+        if (!ans || !ans.trim()) return;
+        setQuestions(questions.map(q => q.id === qId ? { ...q, answer: ans, answered: true } : q));
+        setAnswerInputs({ ...answerInputs, [qId]: '' });
+      };
 
-  const handleAnswerQuestion = (qId) => {
-    const ans = answerInputs[qId];
-    if (!ans || !ans.trim()) return;
-
-    setQuestions(questions.map(q => {
-      if (q.id === qId) {
-        return { ...q, answer: ans, answered: true };
-      }
-      return q;
-    }));
-    setAnswerInputs({ ...answerInputs, [qId]: '' });
-  };
-
-  // Pantalla de Autenticación Privada si no ha iniciado sesión
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-        <div className="bg-white max-w-md w-full rounded-2xl shadow-2xl p-8 border-t-4 border-emerald-600">
-          <div className="text-center mb-8">
-            <div className="inline-flex p-3 bg-emerald-50 rounded-full text-emerald-600 mb-3">
-              <Shield size={36} />
-            </div>
-            <h1 className="text-2xl font-bold text-slate-800">Capacitaciones ALR</h1>
-            <p className="text-sm text-slate-500 mt-1">Plataforma Educativa Privada y Segura</p>
-          </div>
-
-          {loginError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex items-start gap-2">
-              <AlertCircle size={18} className="shrink-0 mt-0.5" />
-              <span>{loginError}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Correo Electrónico Autorizado</label>
-              <input 
-                type="email" 
-                required 
-                placeholder="ej. carlos.mendoza@student.com" 
-                value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Número de Cédula</label>
-              <input 
-                type="text" 
-                required 
-                placeholder="ej. 8-900-456" 
-                value={cedulaInput}
-                onChange={(e) => setCedulaInput(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm"
-              />
-            </div>
-            <button 
-              type="submit" 
-              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow transition duration-200 text-sm"
-            >
-              Ingresar al Campus Privado
-            </button>
-          </form>
-
-          <div className="mt-6 pt-6 border-t border-slate-100 text-center text-xs text-slate-400">
-            <p>Acceso restringido exclusivamente a estudiantes y capacitadores aprobados.</p>
-            <div className="mt-3 p-2 bg-slate-50 rounded text-slate-600 text-left">
-              <span className="font-bold block text-slate-700">Cuentas de prueba disponibles:</span>
-              • Admin (Alexis): alexis.leon@capacitacionesalr.com | Cédula: <code className="text-emerald-700">4-700-123</code><br/>
-              • Estudiante (Carlos): carlos.mendoza@student.com | Cédula: <code className="text-emerald-700">8-900-456</code>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Interfaz Principal de la Web App
-  return (
-    <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
-      {/* Barra Superior / Header */}
-      <header className="bg-slate-900 text-white shadow sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <div className="bg-emerald-600 p-2 rounded-lg text-white">
-              <Shield size={22} />
-            </div>
-            <div>
-              <h2 className="font-bold text-base leading-tight">Capacitaciones ALR</h2>
-              <span className="text-xs text-emerald-400 font-medium">Portal Educativo Oficial</span>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4 mt-2 sm:mt-0">
-            <div className="text-right hidden sm:block">
-              <p className="text-xs font-bold text-slate-200">{user.name}</p>
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider">
-                {user.role === 'admin' ? 'Capacitador / Administrador' : 'Estudiante Registrado'}
-              </p>
-            </div>
-            <button 
-              onClick={handleLogout}
-              className="flex items-center space-x-1.5 bg-slate-800 hover:bg-red-600 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-medium transition duration-150"
-              title="Cerrar Sesión"
-            >
-              <LogOut size={14} />
-              <span>Salir</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Navegación por pestañas */}
-      <nav className="bg-white border-b border-slate-200 shadow-sm sticky top-[57px] z-40 overflow-x-auto">
-        <div className="max-w-7xl mx-auto px-4 flex space-x-1 sm:space-x-4 whitespace-nowrap">
-          {[
-            { id: 'muro', label: 'Muro Social', icon: MessageSquare },
-            { id: 'modulos', label: 'Módulos y PDFs', icon: BookOpen },
-            { id: 'tareas', label: 'Tareas y Formatos Word', icon: FileText },
-            { id: 'calificaciones', label: 'Calificaciones Automáticas', icon: Award },
-            { id: 'preguntas', label: 'Preguntas al Capacitador', icon: HelpCircle },
-            { id: 'fototeca', label: 'Fototeca de Campo', icon: Camera }
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition duration-150 ${
-                  isActive 
-                    ? 'border-emerald-600 text-emerald-700' 
-                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
-                }`}
-              >
-                <Icon size={16} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </nav>
-
-      {/* Contenedor Principal de Contenidos */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
-        
-        {/* 1. MURO SOCIAL */}
-        {activeTab === 'muro' && (
-          <div className="max-w-3xl mx-auto space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-              <h3 className="text-sm font-bold text-slate-800 mb-2">Crear nueva publicación en el muro</h3>
-              <form onSubmit={handleCreatePost}>
-                <textarea 
-                  rows="3"
-                  placeholder="¿Qué deseas compartir con tu grupo o cohorte?"
-                  value={newPostContent}
-                  onChange={(e) => setNewPostContent(e.target.value)}
-                  className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm text-slate-700 resize-none"
-                />
-                <div className="flex justify-end mt-2">
-                  <button 
-                    type="submit"
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow transition"
-                  >
-                    Publicar
-                  </button>
+      if (!user) {
+        return (
+          <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+            <div className="bg-white max-w-md w-full rounded-2xl shadow-2xl p-8 border-t-4 border-emerald-600">
+              <div className="text-center mb-8">
+                <div className="inline-flex p-3 bg-emerald-50 rounded-full text-emerald-600 mb-3">
+                  <Shield size={36} />
                 </div>
+                <h1 className="text-2xl font-bold text-slate-800">Capacitaciones ALR</h1>
+                <p className="text-sm text-slate-500 mt-1">Plataforma Educativa Privada y Segura</p>
+              </div>
+
+              {loginError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm flex items-start gap-2">
+                  <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                  <span>{loginError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Correo Electrónico</label>
+                  <input 
+                    type="email" 
+                    required 
+                    placeholder="ej. carlos.mendoza@student.com" 
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Número de Cédula</label>
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="ej. 8-900-456" 
+                    value={cedulaInput}
+                    onChange={(e) => setCedulaInput(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm"
+                  />
+                </div>
+                <button 
+                  type="submit" 
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow transition duration-200 text-sm"
+                >
+                  Ingresar al Campus Privado
+                </button>
               </form>
+
+              <div className="mt-6 pt-6 border-t border-slate-100 text-center text-xs text-slate-400">
+                <p>Acceso restringido exclusivamente a usuarios aprobados.</p>
+                <div className="mt-3 p-2 bg-slate-50 rounded text-slate-600 text-left">
+                  <span className="font-bold block text-slate-700">Cuentas de prueba:</span>
+                  • Admin: alexis.leon@capacitacionesalr.com | Cédula: <code className="text-emerald-700">4-700-123</code><br/>
+                  • Estudiante: carlos.mendoza@student.com | Cédula: <code className="text-emerald-700">8-900-456</code>
+                </div>
+              </div>
             </div>
+          </div>
+        );
+      }
 
-            <div className="space-y-4">
-              {posts.map((post) => {
-                const canDeletePost = user.role === 'admin' || post.author.includes(user.name);
-                const hasLiked = post.likedBy.includes(user.email);
+      return (
+        <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
+          <header className="bg-slate-900 text-white shadow sticky top-0 z-50">
+            <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+              <div className="flex items-center space-x-3">
+                <div className="bg-emerald-600 p-2 rounded-lg text-white">
+                  <Shield size={22} />
+                </div>
+                <div>
+                  <h2 className="font-bold text-base leading-tight">Capacitaciones ALR</h2>
+                  <span className="text-xs text-emerald-400 font-medium">Portal Educativo Oficial</span>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs font-bold text-slate-200">{user.name}</p>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider">
+                    {user.role === 'admin' ? 'Capacitador / Administrador' : 'Estudiante Registrado'}
+                  </p>
+                </div>
+                <button 
+                  onClick={handleLogout}
+                  className="flex items-center space-x-1.5 bg-slate-800 hover:bg-red-600 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-medium transition duration-150"
+                >
+                  <LogOut size={14} />
+                  <span>Salir</span>
+                </button>
+              </div>
+            </div>
+          </header>
 
+          <nav className="bg-white border-b border-slate-200 shadow-sm sticky top-[57px] z-40 overflow-x-auto">
+            <div className="max-w-7xl mx-auto px-4 flex space-x-2 sm:space-x-4 whitespace-nowrap">
+              {[
+                { id: 'muro', label: 'Muro Social', icon: MessageSquare },
+                { id: 'modulos', label: 'Módulos y PDFs', icon: BookOpen },
+                { id: 'tareas', label: 'Tareas y Word', icon: FileText },
+                { id: 'calificaciones', label: 'Calificaciones', icon: Award },
+                { id: 'preguntas', label: 'Preguntas', icon: HelpCircle },
+                { id: 'fototeca', label: 'Fototeca', icon: Camera }
+              ].map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
                 return (
-                  <div key={post.id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-bold text-slate-900 text-sm">{post.author}</h4>
-                        <span className="text-xs text-slate-400">{post.timestamp}</span>
-                      </div>
-                      {canDeletePost && (
-                        <button 
-                          onClick={() => handleDeletePost(post.id)}
-                          className="text-slate-400 hover:text-red-600 transition"
-                          title="Eliminar publicación"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                    </div>
-
-                    <p className="text-slate-700 text-sm whitespace-pre-wrap">{post.content}</p>
-
-                    <div className="flex items-center space-x-4 pt-2 border-t border-slate-100 text-xs">
-                      <button 
-                        onClick={() => handleLikePost(post.id)}
-                        className={`flex items-center space-x-1 font-semibold transition ${hasLiked ? 'text-emerald-600' : 'text-slate-500 hover:text-emerald-600'}`}
-                      >
-                        <ThumbsUp size={15} />
-                        <span>{post.likes} Me gusta</span>
-                      </button>
-                      <span className="text-slate-400">•</span>
-                      <span className="text-slate-500">{post.comments.length} Comentarios</span>
-                    </div>
-
-                    <div className="bg-slate-50 rounded-lg p-3 space-y-3">
-                      {post.comments.map((comm) => {
-                        const canDeleteComment = user.role === 'admin' || comm.author === user.name;
-                        return (
-                          <div key={comm.id} className="text-xs flex justify-between items-start bg-white p-2.5 rounded border border-slate-200">
-                            <div>
-                              <span className="font-bold text-slate-800">{comm.author}</span>
-                              <p className="text-slate-600 mt-0.5">{comm.content}</p>
-                            </div>
-                            {canDeleteComment && (
-                              <button 
-                                onClick={() => handleDeleteComment(post.id, comm.id)}
-                                className="text-slate-400 hover:text-red-600 ml-2"
-                                title="Eliminar comentario"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            )}
-                          </div>
-                        );
-                      })}
-
-                      <div className="flex items-center space-x-2 pt-1">
-                        <input 
-                          type="text" 
-                          placeholder="Escribe un comentario..."
-                          value={commentInputs[post.id] || ''}
-                          onChange={(e) => setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
-                          className="flex-1 bg-white border border-slate-300 rounded px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                        />
-                        <button 
-                          onClick={() => handleAddComment(post.id)}
-                          className="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded text-xs font-semibold"
-                        >
-                          Comentar
-                        </button>
-                      </div>
-                    </div>
-
-                  </div>
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center space-x-2 py-3 px-3 text-xs sm:text-sm font-semibold border-b-2 transition duration-150 ${
+                      isActive ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Icon size={16} />
+                    <span>{tab.label}</span>
+                  </button>
                 );
               })}
             </div>
-          </div>
-        )}
+          </nav>
 
-        {/* 2. MÓDULOS Y PDFS */}
-        {activeTab === 'modulos' && (
-          <div className="max-w-4xl mx-auto space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <h3 className="text-base font-bold text-slate-900 mb-1">Módulos Académicos Oficiales</h3>
-              <p className="text-xs text-slate-500 mb-6">Consulta los materiales de estudio obligatorios de Capacitaciones ALR y descárgalos en PDF en cualquier momento.</p>
-
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {modulesData.map((mod) => (
-                  <div key={mod.id} className="border border-slate-200 rounded-xl p-5 flex flex-col justify-between hover:shadow-md transition bg-slate-50">
-                    <div>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 mb-2 inline-block">
-                        {mod.course}
-                      </span>
-                      <h4 className="font-bold text-slate-900 text-sm mb-1">{mod.title}</h4>
-                      <p className="text-xs text-slate-600 mb-4">{mod.desc}</p>
+          <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6">
+            {activeTab === 'muro' && (
+              <div className="max-w-3xl mx-auto space-y-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+                  <h3 className="text-sm font-bold text-slate-800 mb-2">Crear nueva publicación</h3>
+                  <form onSubmit={handleCreatePost}>
+                    <textarea 
+                      rows="3"
+                      placeholder="¿Qué deseas compartir con tu grupo?"
+                      value={newPostContent}
+                      onChange={(e) => setNewPostContent(e.target.value)}
+                      className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 text-sm text-slate-700 resize-none"
+                    />
+                    <div className="flex justify-end mt-2">
+                      <button type="submit" className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow">
+                        Publicar
+                      </button>
                     </div>
-                    <button 
-                      onClick={() => alert(`Descargando el archivo PDF: ${mod.pdfName}`)}
-                      className="inline-flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white w-full py-2 rounded-lg text-xs font-semibold shadow transition"
-                    >
-                      <Download size={15} />
-                      <span>Descargar PDF</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+                  </form>
+                </div>
 
-        {/* 3. TAREAS Y FORMATOS WORD */}
-        {activeTab === 'tareas' && (
-          <div className="max-w-4xl mx-auto space-y-8">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <h3 className="text-base font-bold text-slate-900 mb-1">Formatos de Reporte Descargables (.docx)</h3>
-              <p className="text-xs text-slate-500 mb-4">Descarga las plantillas oficiales en Word, llénalas con la información solicitada de tus actividades de campo y súbelas en la sección de tareas.</p>
+                <div className="space-y-4">
+                  {posts.map((post) => {
+                    const canDeletePost = user.role === 'admin' || post.author.includes(user.name);
+                    const hasLiked = post.likedBy.includes(user.email);
+                    return (
+                      <div key={post.id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-bold text-slate-900 text-sm">{post.author}</h4>
+                            <span className="text-xs text-slate-400">{post.timestamp}</span>
+                          </div>
+                          {canDeletePost && (
+                            <button onClick={() => handleDeletePost(post.id)} className="text-slate-400 hover:text-red-600">
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-slate-700 text-sm">{post.content}</p>
+                        <div className="flex items-center space-x-4 pt-2 border-t border-slate-100 text-xs">
+                          <button onClick={() => handleLikePost(post.id)} className={`flex items-center space-x-1 font-semibold ${hasLiked ? 'text-emerald-600' : 'text-slate-500'}`}>
+                            <ThumbsUp size={15} />
+                            <span>{post.likes} Me gusta</span>
+                          </button>
+                          <span className="text-slate-400">•</span>
+                          <span className="text-slate-500">{post.comments.length} Comentarios</span>
+                        </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
-                {wordFormats.map((wf) => (
-                  <div key={wf.id} className="border border-slate-200 rounded-lg p-4 bg-slate-50 flex flex-col justify-between">
-                    <div>
-                      <FileText size={22} className="text-blue-600 mb-2" />
-                      <h5 className="font-bold text-slate-800 text-xs mb-2">{wf.title}</h5>
-                    </div>
-                    <button 
-                      onClick={() => alert(`Descargando plantilla Word: ${wf.file}`)}
-                      className="mt-3 inline-flex items-center justify-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white w-full py-1.5 rounded text-xs font-medium transition"
-                    >
-                      <Download size={14} />
-                      <span>Descargar Word</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <h3 className="text-base font-bold text-slate-900 mb-1">Entregables y Tareas de Campo</h3>
-              <p className="text-xs text-slate-500 mb-6">Sube tus reportes completados. Al completar el envío, el sistema generará tu calificación automática de forma inmediata.</p>
-
-              <div className="space-y-4">
-                {tasks.map((task) => (
-                  <div key={task.id} className="border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50">
-                    <div>
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          task.status === 'Completada' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                        }`}>
-                          {task.status}
-                        </span>
-                        <span className="text-xs text-slate-400 flex items-center gap-1">
-                          <Clock size={12} /> {task.dueDate}
-                        </span>
+                        <div className="bg-slate-50 rounded-lg p-3 space-y-3">
+                          {post.comments.map((comm) => {
+                            const canDeleteComment = user.role === 'admin' || comm.author === user.name;
+                            return (
+                              <div key={comm.id} className="text-xs flex justify-between items-start bg-white p-2.5 rounded border border-slate-200">
+                                <div>
+                                  <span className="font-bold text-slate-800">{comm.author}</span>
+                                  <p className="text-slate-600 mt-0.5">{comm.content}</p>
+                                </div>
+                                {canDeleteComment && (
+                                  <button onClick={() => handleDeleteComment(post.id, comm.id)} className="text-slate-400 hover:text-red-600 ml-2">
+                                    <Trash2 size={13} />
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                          <div className="flex items-center space-x-2 pt-1">
+                            <input 
+                              type="text" 
+                              placeholder="Escribe un comentario..."
+                              value={commentInputs[post.id] || ''}
+                              onChange={(e) => setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
+                              className="flex-1 bg-white border border-slate-300 rounded px-3 py-1.5 text-xs focus:outline-none"
+                            />
+                            <button onClick={() => handleAddComment(post.id)} className="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded text-xs font-semibold">
+                              Comentar
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <h4 className="font-bold text-slate-900 text-sm">{task.title}</h4>
-                      {task.grade !== null && (
-                        <p className="text-xs text-emerald-600 font-bold mt-1">Calificación Obtenida: {task.grade} / 100 pts</p>
-                      )}
-                    </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-                    <div className="flex items-center space-x-2 w-full sm:w-auto">
+            {activeTab === 'modulos' && (
+              <div className="max-w-4xl mx-auto space-y-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <h3 className="text-base font-bold text-slate-900 mb-1">Módulos Académicos Oficiales</h3>
+                  <p className="text-xs text-slate-500 mb-6">Descarga los materiales de estudio en PDF.</p>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    {modulesData.map((mod) => (
+                      <div key={mod.id} className="border border-slate-200 rounded-xl p-5 flex flex-col justify-between bg-slate-50">
+                        <div>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 mb-2 inline-block">{mod.course}</span>
+                          <h4 className="font-bold text-slate-900 text-sm mb-1">{mod.title}</h4>
+                          <p className="text-xs text-slate-600 mb-4">{mod.desc}</p>
+                        </div>
+                        <button onClick={() => alert(`Descargando PDF: ${mod.pdfName}`)} className="inline-flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white w-full py-2 rounded-lg text-xs font-semibold">
+                          <Download size={15} />
+                          <span>Descargar PDF</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'tareas' && (
+              <div className="max-w-4xl mx-auto space-y-8">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <h3 className="text-base font-bold text-slate-900 mb-1">Formatos de Reporte en Word (.docx)</h3>
+                  <p className="text-xs text-slate-500 mb-4">Descarga las plantillas para llenarlas y enviarlas.</p>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {wordFormats.map((wf) => (
+                      <div key={wf.id} className="border border-slate-200 rounded-lg p-4 bg-slate-50 flex flex-col justify-between">
+                        <div>
+                          <FileText size={22} className="text-blue-600 mb-2" />
+                          <h5 className="font-bold text-slate-800 text-xs mb-2">{wf.title}</h5>
+                        </div>
+                        <button onClick={() => alert(`Descargando Word: ${wf.file}`)} className="mt-3 inline-flex items-center justify-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white w-full py-1.5 rounded text-xs">
+                          <Download size={14} />
+                          <span>Descargar Word</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <h3 className="text-base font-bold text-slate-900 mb-1">Entregables y Tareas de Campo</h3>
+                  <p className="text-xs text-slate-500 mb-6">Sube tus reportes y obtén calificación automática.</p>
+                  <div className="space-y-4">
+                    {tasks.map((task) => (
+                      <div key={task.id} className="border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50">
+                        <div>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${task.status === 'Completada' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                            {task.status}
+                          </span>
+                          <h4 className="font-bold text-slate-900 text-sm mt-1">{task.title}</h4>
+                          {task.grade !== null && <p className="text-xs text-emerald-600 font-bold mt-1">Calificación: {task.grade} / 100 pts</p>}
+                        </div>
+                        <div className="flex items-center space-x-2 w-full sm:w-auto">
+                          <input type="file" className="text-xs text-slate-500" />
+                          <button onClick={() => handleSubmitTask(task.id)} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-semibold">
+                            Enviar y Calificar
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'calificaciones' && (
+              <div className="max-w-4xl mx-auto space-y-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <h3 className="text-base font-bold text-slate-900 mb-1">Registro de Calificaciones Automáticas</h3>
+                  <p className="text-xs text-slate-500 mb-6">Evaluación en tiempo real de la cohorte.</p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-slate-600">
+                      <thead className="bg-slate-50 text-slate-700 uppercase font-semibold text-[10px]">
+                        <tr>
+                          <th className="py-3 px-4">Estudiante</th>
+                          <th className="py-3 px-4 text-center">Tarea 1</th>
+                          <th className="py-3 px-4 text-center">Tarea 2</th>
+                          <th className="py-3 px-4 text-center">Tarea 3</th>
+                          <th className="py-3 px-4 text-center">Promedio Final</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {gradesRoster.map((row) => (
+                          <tr key={row.id}>
+                            <td className="py-3 px-4 font-bold text-slate-800">{row.name}</td>
+                            <td className="py-3 px-4 text-center">{row.t1}</td>
+                            <td className="py-3 px-4 text-center">{row.t2}</td>
+                            <td className="py-3 px-4 text-center">{row.t3}</td>
+                            <td className="py-3 px-4 text-center font-bold text-emerald-600">{row.finalAvg} pts</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'preguntas' && (
+              <div className="max-w-3xl mx-auto space-y-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <h3 className="text-base font-bold text-slate-900 mb-1">Preguntas Directas al Capacitador</h3>
+                  <p className="text-xs text-slate-500 mb-6">Solo el capacitador (Alexis León Rivera) puede responder oficialmente.</p>
+                  <form onSubmit={handleCreateQuestion} className="mb-6">
+                    <textarea 
+                      rows="2"
+                      placeholder="Escribe tu consulta..."
+                      value={newQuestionText}
+                      onChange={(e) => setNewQuestionText(e.target.value)}
+                      className="w-full p-3 border border-slate-200 rounded-lg text-xs text-slate-700 resize-none"
+                    />
+                    <div className="flex justify-end mt-2">
+                      <button type="submit" className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold">
+                        Enviar Consulta
+                      </button>
+                    </div>
+                  </form>
+                  <div className="space-y-4">
+                    {questions.map((q) => (
+                      <div key={q.id} className="border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-3">
+                        <h4 className="font-bold text-slate-800 text-xs">Consulta de: {q.student}</h4>
+                        <p className="text-slate-700 text-xs bg-white p-3 rounded border">"{q.question}"</p>
+                        {q.answered ? (
+                          <div className="bg-emerald-50 border p-3 rounded-lg text-xs">
+                            <span className="font-bold text-emerald-800 block">Respuesta Oficial de Alexis León Rivera:</span>
+                            <p className="text-emerald-900">{q.answer}</p>
+                          </div>
+                        ) : (
+                          user.role === 'admin' && (
+                            <div className="space-y-2 pt-2 border-t">
+                              <input 
+                                type="text"
+                                placeholder="Escribe la respuesta oficial..."
+                                value={answerInputs[q.id] || ''}
+                                onChange={(e) => setAnswerInputs({ ...answerInputs, [q.id]: e.target.value })}
+                                className="w-full bg-white border rounded px-3 py-2 text-xs"
+                              />
+                              <button onClick={() => handleAnswerQuestion(q.id)} className="bg-emerald-600 text-white px-3 py-1.5 rounded text-xs font-semibold">
+                                Publicar Respuesta
+                              </button>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'fototeca' && (
+              <div className="max-w-4xl mx-auto space-y-6">
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <h3 className="text-base font-bold text-slate-900 mb-1">Fototeca de Actividades de Campo</h3>
+                  <p className="text-xs text-slate-500 mb-6">Galería de evidencias prácticas.</p>
+                  <div className="bg-slate-50 border rounded-xl p-4 mb-6 space-y-3">
+                    <h4 className="font-bold text-slate-800 text-xs">Compartir nueva foto</h4>
+                    <div className="grid gap-3 sm:grid-cols-2">
                       <input 
-                        type="file" 
-                        onChange={(e) => setSelectedTaskFile(e.target.files[0])}
-                        className="text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-200 file:text-slate-700 hover:file:bg-slate-300"
+                        type="text" 
+                        placeholder="Título (ej. Calibración)"
+                        value={newPhotoTitle}
+                        onChange={(e) => setNewPhotoTitle(e.target.value)}
+                        className="p-2 border rounded text-xs bg-white"
                       />
-                      <button 
-                        onClick={() => handleSubmitTask(task.id)}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-semibold shadow transition whitespace-nowrap"
-                      >
-                        Enviar y Calificar
+                      <input 
+                        type="text" 
+                        placeholder="URL de imagen"
+                        value={newPhotoUrl}
+                        onChange={(e) => setNewPhotoUrl(e.target.value)}
+                        className="p-2 border rounded text-xs bg-white"
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <button onClick={() => {
+                        if (!newPhotoTitle || !newPhotoUrl) return alert('Completa los campos.');
+                        setPhotos([{ id: Date.now(), title: newPhotoTitle, author: user.name, url: newPhotoUrl }, ...photos]);
+                        setNewPhotoTitle('');
+                        setNewPhotoUrl('');
+                      }} className="px-4 py-2 bg-emerald-600 text-white rounded text-xs font-semibold">
+                        Subir Foto
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 4. CALIFICACIONES AUTOMÁTICAS */}
-        {activeTab === 'calificaciones' && (
-          <div className="max-w-4xl mx-auto space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900">Registro de Calificaciones Automáticas</h3>
-                  <p className="text-xs text-slate-500">Evaluación en tiempo real de los estudiantes de la cohorte actual (Grupos de 10-12 personas).</p>
-                </div>
-                <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-center">
-                  <Award size={24} className="text-emerald-600 mx-auto mb-1" />
-                  <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Sistema Automatizado</span>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-600">
-                  <thead className="bg-slate-50 text-slate-700 uppercase font-semibold text-[10px] tracking-wider">
-                    <tr>
-                      <th className="py-3 px-4">Estudiante</th>
-                      <th className="py-3 px-4 text-center">Tarea 1</th>
-                      <th className="py-3 px-4 text-center">Tarea 2</th>
-                      <th className="py-3 px-4 text-center">Tarea 3</th>
-                      <th className="py-3 px-4 text-center">Promedio Final</th>
-                      <th className="py-3 px-4 text-center">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {gradesRoster.map((row) => (
-                      <tr key={row.id} className="hover:bg-slate-50">
-                        <td className="py-3 px-4 font-bold text-slate-800">{row.name}</td>
-                        <td className="py-3 px-4 text-center">{row.t1}</td>
-                        <td className="py-3 px-4 text-center">{row.t2}</td>
-                        <td className="py-3 px-4 text-center">{row.t3}</td>
-                        <td className="py-3 px-4 text-center font-bold text-emerald-600">{row.finalAvg} pts</td>
-                        <td className="py-3 px-4 text-center">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            row.finalAvg >= 70 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
-                          }`}>
-                            {row.finalAvg >= 70 ? 'Aprobado' : 'En Proceso'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 5. PREGUNTAS DIRECTAS AL CAPACITADOR */}
-        {activeTab === 'preguntas' && (
-          <div className="max-w-3xl mx-auto space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <h3 className="text-base font-bold text-slate-900 mb-1">Preguntas Directas al Capacitador</h3>
-              <p className="text-xs text-slate-500 mb-6">Espacio privado de consultas. Nota: Solo el capacitador autorizado (Alexis León Rivera) puede contestar oficialmente en este apartado.</p>
-
-              <form onSubmit={handleCreateQuestion} className="mb-6">
-                <textarea 
-                  rows="2"
-                  placeholder="Escribe tu consulta directa al capacitador..."
-                  value={newQuestionText}
-                  onChange={(e) => setNewQuestionText(e.target.value)}
-                  className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none text-xs text-slate-700 resize-none"
-                />
-                <div className="flex justify-end mt-2">
-                  <button 
-                    type="submit"
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow transition"
-                  >
-                    Enviar Consulta
-                  </button>
-                </div>
-              </form>
-
-              <div className="space-y-4">
-                {questions.map((q) => (
-                  <div key={q.id} className="border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Consulta de:</span>
-                        <h4 className="font-bold text-slate-800 text-xs">{q.student}</h4>
-                      </div>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        q.answered ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                      }`}>
-                        {q.answered ? 'Respondida' : 'Pendiente de Respuesta'}
-                      </span>
-                    </div>
-
-                    <p className="text-slate-700 text-xs font-medium bg-white p-3 rounded border border-slate-200">
-                      "{q.question}"
-                    </p>
-
-                    {q.answered ? (
-                      <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-lg text-xs space-y-1">
-                        <span className="font-bold text-emerald-800 block">Respuesta Oficial del Capacitador (Alexis León Rivera):</span>
-                        <p className="text-emerald-900">{q.answer}</p>
-                      </div>
-                    ) : (
-                      user.role === 'admin' && (
-                        <div className="space-y-2 pt-2 border-t border-slate-200">
-                          <input 
-                            type="text"
-                            placeholder="Escribe la respuesta oficial como capacitador..."
-                            value={answerInputs[q.id] || ''}
-                            onChange={(e) => setAnswerInputs({ ...answerInputs, [q.id]: e.target.value })}
-                            className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                          />
-                          <button 
-                            onClick={() => handleAnswerQuestion(q.id)}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-xs font-semibold"
-                          >
-                            Publicar Respuesta Oficial
-                          </button>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    {photos.map((p) => (
+                      <div key={p.id} className="border rounded-xl overflow-hidden bg-slate-50 shadow-sm flex flex-col">
+                        <div className="h-40 bg-slate-200">
+                          <img src={p.url} alt={p.title} className="w-full h-full object-cover" />
                         </div>
-                      )
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 6. FOTOTECA DE CAMPO */}
-        {activeTab === 'fototeca' && (
-          <div className="max-w-4xl mx-auto space-y-6">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900">Fototeca de Actividades de Campo</h3>
-                  <p className="text-xs text-slate-500">Galería oficial del grupo (Cohortes de 10-12 personas) compartiendo evidencias prácticas en estación.</p>
-                </div>
-                <Camera size={24} className="text-emerald-600" />
-              </div>
-
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 space-y-3">
-                <h4 className="font-bold text-slate-800 text-xs">Compartir nueva foto de campo</h4>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <input 
-                    type="text" 
-                    placeholder="Título de la actividad (ej. Medición de tanques)"
-                    value={newPhotoTitle}
-                    onChange={(e) => setNewPhotoTitle(e.target.value)}
-                    className="p-2 border border-slate-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
-                  />
-                  <input 
-                    type="text" 
-                    placeholder="URL de imagen (ej. https://...)"
-                    value={newPhotoUrl}
-                    onChange={(e) => setNewPhotoUrl(e.target.value)}
-                    className="p-2 border border-slate-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
-                  />
-                </div>
-                <div className="flex justify-end">
-                  <button 
-                    onClick={() => {
-                      if (!newPhotoTitle || !newPhotoUrl) return alert('Completa título y URL de imagen.');
-                      setPhotos([{ id: Date.now(), title: newPhotoTitle, author: user.name, url: newPhotoUrl }, ...photos]);
-                      setNewPhotoTitle('');
-                      setNewPhotoUrl('');
-                    }}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold"
-                  >
-                    Subir a la Fototeca
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {photos.map((p) => (
-                  <div key={p.id} className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50 shadow-sm flex flex-col">
-                    <div className="h-40 bg-slate-200 overflow-hidden">
-                      <img src={p.url} alt={p.title} className="w-full h-full object-cover hover:scale-105 transition duration-300" />
-                    </div>
-                    <div className="p-3 flex-1 flex flex-col justify-between">
-                      <div>
-                        <h5 className="font-bold text-slate-800 text-xs mb-1">{p.title}</h5>
-                        <p className="text-[10px] text-slate-500">Subido por: {p.author}</p>
+                        <div className="p-3">
+                          <h5 className="font-bold text-slate-800 text-xs mb-1">{p.title}</h5>
+                          <p className="text-[10px] text-slate-500">Por: {p.author}</p>
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
+            )}
+          </main>
 
-            </div>
-          </div>
-        )}
-
-      </main>
-
-      <footer className="bg-slate-900 text-slate-400 py-6 text-center text-xs border-t border-slate-800 mt-auto">
-        <div className="max-w-7xl mx-auto px-4">
-          <p className="font-semibold text-slate-300">Capacitaciones ALR • Todos los derechos reservados</p>
-          <p className="mt-1 text-[11px]">Plataforma Educativa Privada y Segura bajo estándares corporativos y de formación profesional.</p>
+          <footer className="bg-slate-900 text-slate-400 py-6 text-center text-xs border-t border-slate-800 mt-auto">
+            <p className="font-semibold text-slate-300">Capacitaciones ALR • Todos los derechos reservados</p>
+          </footer>
         </div>
-      </footer>
-    </div>
-  );
-}
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<CapacitacionesALRApp />);
+  </script>
+</body>
+</html>
