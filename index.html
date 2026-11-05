@@ -160,7 +160,7 @@
       });
       saveState();
       render();
-      alert('¡Módulo y archivo PDF publicado con éxito!');
+      alert('¡Módulo cargado con éxito!');
     }
 
     function deleteModule(id) {
@@ -379,16 +379,16 @@
           <div class="space-y-6">
             ${state.user.role === 'admin' ? `
               <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-5 shadow-sm">
-                <h3 class="text-xs font-bold text-emerald-900 uppercase mb-3">➕ Subir Nuevo Módulo / Material PDF (Panel de Administrador)</h3>
+                <h3 class="text-xs font-bold text-emerald-900 uppercase mb-3">➕ Cargar Nuevo Módulo / Material (Panel de Administrador)</h3>
                 <form onsubmit="addModule(event)" class="space-y-3">
                   <div class="grid gap-3 sm:grid-cols-2">
                     <input type="text" id="modTitle" required placeholder="Título del Módulo (ej. Módulo 4: HSE)" class="p-2 border rounded text-xs bg-white">
                     <input type="text" id="modCourse" required placeholder="Nombre del Programa (ej. Supervisor EDS)" class="p-2 border rounded text-xs bg-white">
                   </div>
                   <textarea id="modDesc" rows="2" placeholder="Breve descripción del contenido..." class="w-full p-2 border rounded text-xs bg-white resize-none"></textarea>
-                  <input type="text" id="modUrl" required placeholder="Enlace web del archivo PDF (ej. https://... o enlace de Drive/Dropbox)" class="w-full p-2 border rounded text-xs bg-white">
+                  <input type="text" id="modUrl" required placeholder="Enlace web del archivo (ej. Google Drive, OneDrive o PDF)" class="w-full p-2 border rounded text-xs bg-white">
                   <div class="flex justify-end">
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold shadow">Publicar Módulo en PDF</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold shadow">Cargar Módulo</button>
                   </div>
                 </form>
               </div>
@@ -396,7 +396,7 @@
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
               <h3 class="text-sm font-bold text-slate-900">Módulos Académicos Oficiales</h3>
-              <p class="text-xs text-slate-500">Materiales de estudio obligatorios (Disponibles exclusivamente para descarga en formato PDF).</p>
+              <p class="text-xs text-slate-500">Materiales de estudio obligatorios de Capacitaciones ALR.</p>
               <div class="grid gap-4 sm:grid-cols-3">
                 ${state.modules.map(m => `
                   <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col justify-between relative">
@@ -406,7 +406,7 @@
                       <h4 class="font-bold text-slate-900 text-xs mb-1 pr-6">${m.title}</h4>
                       <p class="text-[11px] text-slate-600 mb-4">${m.desc}</p>
                     </div>
-                    <a href="${m.url !== '#' ? m.url : '#'}" target="_blank" onclick="${m.url === '#' ? "alert('Descargando PDF oficial del módulo...'); return false;" : ""}" class="block text-center w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold">📥 Descargar PDF</a>
+                    <a href="${m.url !== '#' ? m.url : '#'}" target="_blank" onclick="${m.url === '#' ? "alert('Abriendo documento oficial...'); return false;" : ""}" class="block text-center w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold">📄 Ver Módulo</a>
                   </div>
                 `).join('')}
               </div>
