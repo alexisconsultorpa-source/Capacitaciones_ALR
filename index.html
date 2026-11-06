@@ -17,7 +17,7 @@
   <!-- Lógica de la Aplicación con Supabase -->
   <script>
     // 🔑 CREDENCIALES OFICIALES DE SUPABASE
-    const SUPABASE_URL = 'https://bvnsepupgHgluShNrdGl.supabase.co';
+    const SUPABASE_URL = 'https://bvnsepupghgluqnhrdgl.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_-B-Lck4vqjF0eLf0UlXJzQ_jOhPg_XH';
 
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -54,7 +54,6 @@
       const email = document.getElementById('emailInput').value.trim().toLowerCase();
       const cedula = document.getElementById('cedulaInput').value.trim();
 
-      // Consultar todos los usuarios para hacer una validación robusta y segura desde la app
       const { data, error } = await _supabase
         .from('usuarios')
         .select('*');
@@ -65,10 +64,9 @@
         return;
       }
 
-      // Buscar coincidencia ignorando mayúsculas/minúsculas en el correo y espacios en la cédula
       const matchedUser = data.find(u => 
-        u.email.trim().toLowerCase() === email && 
-        u.cedula.trim() === cedula
+        u.email && u.email.trim().toLowerCase() === email && 
+        u.cedula && u.cedula.trim() === cedula
       );
 
       if (matchedUser) {
@@ -171,18 +169,6 @@
     function likePost(id) {
       const p = state.posts.find(item => item.id === id);
       if (p) { p.likes += 1; render(); }
-    }
-
-    function addComment(postId, event) {
-      event.preventDefault();
-      const input = document.getElementById(`comment-${postId}`);
-      const text = input.value.trim();
-      if (!text) return;
-      const p = state.posts.find(item => item.id === postId);
-      if (p) {
-        p.comments.push({ id: Date.now(), author: state.user.name, content: text, timestamp: 'Justo ahora' });
-        render();
-      }
     }
 
     function addModule(event) {
@@ -738,7 +724,6 @@
       }
     }
 
-    // Cargar la lista blanca al iniciar la aplicación para validar logins y roles desde Supabase
     loadWhitelist();
   </script>
 </body>
