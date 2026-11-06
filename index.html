@@ -14,10 +14,9 @@
 
   <!-- Lógica de la Aplicación con Almacenamiento Local (localStorage) -->
   <script>
+    // Únicamente el profesor administrador por defecto al limpiar o iniciar de cero
     const defaultWhitelist = [
-      { email: 'alexis.leon@capacitacionesalr.com', cedula: '4-700-123', name: 'Alexis León Rivera', role: 'admin' },
-      { email: 'carlos.mendoza@student.com', cedula: '8-900-456', name: 'Carlos Mendoza', role: 'student' },
-      { email: 'ana.gomez@student.com', cedula: '2-500-789', name: 'Ana Gómez', role: 'student' }
+      { email: 'alexis.leon@capacitacionesalr.com', cedula: '4-700-123', name: 'Alexis León Rivera', role: 'admin' }
     ];
 
     const defaultState = {
@@ -115,7 +114,7 @@
       });
       saveState();
       render();
-      alert(`¡Estudiante ${name} agregado con éxito a la lista autorizada!`);
+      alert(`¡Estudiante ${name} agregado con éxito! Ya puede ingresar a la app con su correo y cédula.`);
     }
 
     function deleteStudent(email) {
@@ -251,7 +250,7 @@
         desc: desc,
         dueDate: dueDate,
         status: 'Pendiente',
-        grades: {}, // Almacena notas por email de estudiante
+        grades: {},
         url: url
       });
       saveState();
@@ -334,7 +333,7 @@
     }
 
     function resetSalonData() {
-      if (confirm('¿Estás seguro de limpiar todos los datos del salón actual para iniciar con un nuevo grupo? Se borrarán todos los registros y ejemplos.')) {
+      if (confirm('¿Estás seguro de limpiar todos los datos del salón actual para iniciar con un nuevo grupo? Se borrarán todos los registros y estudiantes.')) {
         localStorage.removeItem('alr_app_state');
         state = JSON.parse(JSON.stringify(defaultState));
         state.user = { name: 'Alexis León Rivera', role: 'admin', email: 'alexis.leon@capacitacionesalr.com' };
@@ -363,7 +362,7 @@
               <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
                   <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Correo Electrónico</label>
-                  <input type="email" id="emailInput" required placeholder="ej. carlos.mendoza@student.com" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                  <input type="email" id="emailInput" required placeholder="ej. correo@estudiante.com" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
                 <div>
                   <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Número de Cédula</label>
@@ -375,9 +374,8 @@
               </form>
 
               <div class="mt-6 pt-4 border-t border-slate-100 text-[11px] text-slate-500 bg-slate-50 p-3 rounded">
-                <span class="font-bold block text-slate-700 mb-1">Cuentas autorizadas de prueba:</span>
-                • Admin: alexis.leon@capacitacionesalr.com | Cédula: <b class="text-emerald-700">4-700-123</b><br>
-                • Estudiante: carlos.mendoza@student.com | Cédula: <b class="text-emerald-700">8-900-456</b>
+                <span class="font-bold block text-slate-700 mb-1">Cuenta Administrador:</span>
+                • alexis.leon@capacitacionesalr.com | Cédula: <b class="text-emerald-700">4-700-123</b>
               </div>
             </div>
           </div>
@@ -480,7 +478,7 @@
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
               <h3 class="text-sm font-bold text-slate-900">Estudiantes Autorizados en el Grupo</h3>
-              <p class="text-xs text-slate-500">Solo los usuarios registrados en esta lista podrán ingresar al campus virtual.</p>
+              <p class="text-xs text-slate-500">Solo los usuarios registrados en esta lista podrán ingresar al campus virtual con su correo y cédula.</p>
               ${studentsList.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay estudiantes registrados todavía.</p>' : `
                 <div class="overflow-x-auto">
                   <table class="w-full text-left text-xs text-slate-600">
@@ -707,7 +705,7 @@
             <h3 class="text-sm font-bold text-slate-900">Registro de Calificaciones del Grupo</h3>
             <p class="text-xs text-slate-500">${state.user.role === 'admin' ? 'Vista de Administrador: Calificaciones detalladas por estudiante.' : 'Vista de Estudiante: Notas del grupo de forma anónima.'}</p>
             
-            ${state.tasks.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">Aún no hay tareas registradas para mostrar calificaciones.</p>' : `
+            ${state.tasks.length === 0 || studentsList.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">Aún no hay suficientes datos para mostrar calificaciones.</p>' : `
               <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs text-slate-600">
                   <thead class="bg-slate-50 text-slate-700 uppercase text-[9px]">
@@ -718,7 +716,6 @@
                   </thead>
                   <tbody class="divide-y divide-slate-100">
                     ${studentsList.map((st, idx) => {
-                      // Si es admin ve nombres reales; si es estudiante ve nombres anónimos ("Estudiante 1", etc.) o su propio nombre real
                       const displayName = state.user.role === 'admin' ? st.name : (st.email === state.user.email ? `${st.name} (Tú)` : `Estudiante ${idx + 1}`);
                       const isMe = st.email === state.user.email;
                       return `
