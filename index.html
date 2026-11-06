@@ -16,8 +16,8 @@
 
   <!-- Lógica de la Aplicación con Supabase -->
   <script>
-    // 🔑 CREDENCIALES OFICIALES DE SUPABASE
-    const SUPABASE_URL = 'https://bvnsepupgHgluShNrdGl.supabase.co';
+    // 🔑 CREDENCIALES OFICIALES DE SUPABASE CORREGIDAS
+    const SUPABASE_URL = 'https://bvnsepupghgluqnhrdgl.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_-B-Lck4vqjF0eLf0UlXJzQ_jOhPg_XH';
 
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -144,7 +144,6 @@
       }
     }
 
-    // 🚀 NUEVA FUNCIÓN: Publicar en el Muro Social conectada a Supabase
     async function addPost(event) {
       event.preventDefault();
       const text = document.getElementById('newPostText').value.trim();
@@ -164,7 +163,7 @@
         alert('No se pudo publicar en el muro.');
       } else {
         document.getElementById('newPostText').value = '';
-        loadData(); // Recarga los posts desde la nube para que todos los vean
+        loadData();
       }
     }
 
