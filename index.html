@@ -397,6 +397,7 @@
     }
 
     function renderTabContent() {
+      // 📌 Pestaña de Gestión de Grupo (Cargada correctamente)
       if (state.activeTab === 'estudiantes' && state.user.role === 'admin') {
         const studentsList = state.whitelist.filter(u => u.role === 'student');
         return `
