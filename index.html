@@ -12,11 +12,15 @@
   <!-- Contenedor Principal de la App -->
   <div id="app" class="flex-1 flex flex-col"></div>
 
-  <!-- Lógica de la Aplicación con Almacenamiento Local (localStorage) -->
+  <!-- Lógica de la Aplicación -->
   <script>
-    // Únicamente el profesor administrador por defecto al limpiar o iniciar de cero
+    // 📌 REGISTRA AQUÍ A TODOS TUS ESTUDIANTES OFICIALES
+    // Cada vez que agregues uno nuevo, puedes actualizarlo aquí y subirlo a GitHub.
     const defaultWhitelist = [
-      { email: 'alexis.leon@capacitacionesalr.com', cedula: '4-700-123', name: 'Alexis León Rivera', role: 'admin' }
+      { email: 'alexis.leon@capacitacionesalr.com', cedula: '4-700-123', name: 'Alexis León Rivera', role: 'admin' },
+      { email: 'carlos.mendoza@student.com', cedula: '8-900-456', name: 'Carlos Mendoza', role: 'student' }
+      // Agrega más estudiantes aquí abajo respetando el formato:
+      // { email: 'correo@ejemplo.com', cedula: '8-000-000', name: 'Nombre Apellido', role: 'student' },
     ];
 
     const defaultState = {
@@ -33,7 +37,10 @@
     };
 
     let state = JSON.parse(localStorage.getItem('alr_app_state')) || defaultState;
-    if (!state.whitelist) state.whitelist = defaultWhitelist;
+    // Forzar actualización de la lista blanca global si ya existía una sesión previa
+    if (!state.whitelist || state.whitelist.length <= 1) {
+      state.whitelist = defaultWhitelist;
+    }
     state.user = null;
     state.activeTab = 'muro';
     state.menuOpen = false;
@@ -80,7 +87,6 @@
       render();
     }
 
-    // Cerrar el menú si se hace clic fuera de él
     function handleOutsideClick(event) {
       if (state.menuOpen) {
         const menuEl = document.getElementById('dropdownMenu');
@@ -114,7 +120,7 @@
       });
       saveState();
       render();
-      alert(`¡Estudiante ${name} agregado con éxito! Ya puede ingresar a la app con su correo y cédula.`);
+      alert(`¡Estudiante ${name} agregado con éxito!`);
     }
 
     function deleteStudent(email) {
@@ -333,14 +339,14 @@
     }
 
     function resetSalonData() {
-      if (confirm('¿Estás seguro de limpiar todos los datos del salón actual para iniciar con un nuevo grupo? Se borrarán todos los registros y estudiantes.')) {
+      if (confirm('¿Estás seguro de limpiar todos los datos del salón actual para iniciar con un nuevo grupo? Se borrarán todos los registros.')) {
         localStorage.removeItem('alr_app_state');
         state = JSON.parse(JSON.stringify(defaultState));
         state.user = { name: 'Alexis León Rivera', role: 'admin', email: 'alexis.leon@capacitacionesalr.com' };
         state.activeTab = 'muro';
         state.menuOpen = false;
         render();
-        alert('¡Salón reiniciado con éxito! Todo ha quedado completamente limpio.');
+        alert('¡Salón reiniciado con éxito!');
       }
     }
 
@@ -372,11 +378,6 @@
                   Ingresar al Campus Privado
                 </button>
               </form>
-
-              <div class="mt-6 pt-4 border-t border-slate-100 text-[11px] text-slate-500 bg-slate-50 p-3 rounded">
-                <span class="font-bold block text-slate-700 mb-1">Cuenta Administrador:</span>
-                • alexis.leon@capacitacionesalr.com | Cédula: <b class="text-emerald-700">4-700-123</b>
-              </div>
             </div>
           </div>
         `;
@@ -396,7 +397,7 @@
 
             <div class="flex items-center space-x-3">
               ${state.user.role === 'admin' ? `
-                <button onclick="resetSalonData()" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1.5 rounded text-[11px] font-semibold transition hidden sm:inline-block" title="Limpiar datos para nuevo salón">
+                <button onclick="resetSalonData()" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1.5 rounded text-[11px] font-semibold transition hidden sm:inline-block" title="Limpiar datos">
                   🔄 Resetear Salón
                 </button>
               ` : ''}
@@ -408,7 +409,7 @@
                 Salir
               </button>
 
-              <!-- Botón de Menú Hamburguesa (3 líneas) a la mano derecha -->
+              <!-- Menú Hamburguesa -->
               <button id="menuBtn" onclick="toggleMenu(event)" class="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg focus:outline-none flex flex-col justify-center items-center w-9 h-9 space-y-1">
                 <span class="block w-5 h-0.5 bg-white"></span>
                 <span class="block w-5 h-0.5 bg-white"></span>
@@ -417,7 +418,7 @@
             </div>
           </div>
 
-          <!-- Menú desplegable estilo hamburguesa -->
+          <!-- Menú desplegable -->
           ${state.menuOpen ? `
             <div id="dropdownMenu" class="absolute top-full right-4 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-slate-200 py-2 z-50 text-slate-800">
               <div class="px-4 py-2 border-b border-slate-100 sm:hidden">
@@ -463,12 +464,12 @@
         return `
           <div class="space-y-6">
             <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-5 shadow-sm">
-              <h3 class="text-xs font-bold text-emerald-900 uppercase mb-3">➕ Registrar Nuevo Estudiante (Panel de Administrador)</h3>
+              <h3 class="text-xs font-bold text-emerald-900 uppercase mb-3">➕ Registrar Nuevo Estudiante</h3>
               <form onsubmit="addStudent(event)" class="space-y-3">
                 <div class="grid gap-3 sm:grid-cols-3">
                   <input type="text" id="studentName" required placeholder="Nombre completo" class="p-2 border rounded text-xs bg-white">
                   <input type="email" id="studentEmail" required placeholder="Correo electrónico" class="p-2 border rounded text-xs bg-white">
-                  <input type="text" id="studentCedula" required placeholder="Número de cédula (ej. 8-900-456)" class="p-2 border rounded text-xs bg-white">
+                  <input type="text" id="studentCedula" required placeholder="Número de cédula" class="p-2 border rounded text-xs bg-white">
                 </div>
                 <div class="flex justify-end">
                   <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold shadow">Registrar Estudiante</button>
@@ -477,15 +478,14 @@
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
-              <h3 class="text-sm font-bold text-slate-900">Estudiantes Autorizados en el Grupo</h3>
-              <p class="text-xs text-slate-500">Solo los usuarios registrados en esta lista podrán ingresar al campus virtual con su correo y cédula.</p>
-              ${studentsList.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay estudiantes registrados todavía.</p>' : `
+              <h3 class="text-sm font-bold text-slate-900">Estudiantes Autorizados</h3>
+              ${studentsList.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay estudiantes registrados.</p>' : `
                 <div class="overflow-x-auto">
                   <table class="w-full text-left text-xs text-slate-600">
                     <thead class="bg-slate-50 text-slate-700 uppercase text-[9px]">
                       <tr>
                         <th class="py-2.5 px-3">Nombre</th>
-                        <th class="py-2.5 px-3">Correo Electrónico</th>
+                        <th class="py-2.5 px-3">Correo</th>
                         <th class="py-2.5 px-3">Cédula</th>
                         <th class="py-2.5 px-3 text-center">Acciones</th>
                       </tr>
@@ -524,7 +524,7 @@
             </div>
 
             <div class="space-y-4">
-              ${state.posts.length === 0 ? '<p class="text-center text-xs text-slate-400 py-8 bg-white rounded-xl border border-slate-200">No hay publicaciones en el muro todavía. ¡Sé el primero en compartir algo!</p>' : ''}
+              ${state.posts.length === 0 ? '<p class="text-center text-xs text-slate-400 py-8 bg-white rounded-xl border border-slate-200">No hay publicaciones en el muro todavía.</p>' : ''}
               ${state.posts.map(p => `
                 <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
                   <div class="flex justify-between items-start">
@@ -537,19 +537,6 @@
                   <p class="text-slate-700 text-xs">${p.content}</p>
                   <div class="flex items-center space-x-3 pt-2 border-t border-slate-100 text-xs">
                     <button onclick="likePost(${p.id})" class="text-emerald-600 font-semibold hover:underline">👍 ${p.likes} Me gusta</button>
-                    <span class="text-slate-400">•</span>
-                    <span class="text-slate-500">${p.comments.length} Comentarios</span>
-                  </div>
-                  <div class="bg-slate-50 rounded-lg p-2.5 space-y-2">
-                    ${p.comments.map(c => `
-                      <div class="text-[11px] bg-white p-2 rounded border border-slate-200">
-                        <span class="font-bold text-slate-800">${c.author}:</span> ${c.content}
-                      </div>
-                    `).join('')}
-                    <form onsubmit="addComment(${p.id}, event)" class="flex gap-2 pt-1">
-                      <input type="text" id="comment-${p.id}" placeholder="Escribe un comentario..." class="flex-1 bg-white border border-slate-300 rounded px-2 py-1 text-[11px] focus:outline-none">
-                      <button type="submit" class="bg-slate-800 text-white px-3 py-1 rounded text-[11px] font-semibold">Comentar</button>
-                    </form>
                   </div>
                 </div>
               `).join('')}
@@ -563,14 +550,14 @@
           <div class="space-y-6">
             ${state.user.role === 'admin' ? `
               <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-5 shadow-sm">
-                <h3 class="text-xs font-bold text-emerald-900 uppercase mb-3">➕ Cargar Nuevo Módulo / Material (Panel de Administrador)</h3>
+                <h3 class="text-xs font-bold text-emerald-900 uppercase mb-3">➕ Cargar Nuevo Módulo</h3>
                 <form onsubmit="addModule(event)" class="space-y-3">
                   <div class="grid gap-3 sm:grid-cols-2">
-                    <input type="text" id="modTitle" required placeholder="Título del Módulo (ej. Módulo 1: HSE)" class="p-2 border rounded text-xs bg-white">
-                    <input type="text" id="modCourse" required placeholder="Nombre del Programa (ej. Supervisor EDS)" class="p-2 border rounded text-xs bg-white">
+                    <input type="text" id="modTitle" required placeholder="Título del Módulo" class="p-2 border rounded text-xs bg-white">
+                    <input type="text" id="modCourse" required placeholder="Nombre del Programa" class="p-2 border rounded text-xs bg-white">
                   </div>
-                  <textarea id="modDesc" rows="2" placeholder="Breve descripción del contenido..." class="w-full p-2 border rounded text-xs bg-white resize-none"></textarea>
-                  <input type="text" id="modUrl" required placeholder="Enlace web del archivo (ej. Google Drive o PDF)" class="w-full p-2 border rounded text-xs bg-white">
+                  <textarea id="modDesc" rows="2" placeholder="Breve descripción..." class="w-full p-2 border rounded text-xs bg-white resize-none"></textarea>
+                  <input type="text" id="modUrl" required placeholder="Enlace web del archivo" class="w-full p-2 border rounded text-xs bg-white">
                   <div class="flex justify-end">
                     <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold shadow">Cargar Módulo</button>
                   </div>
@@ -580,12 +567,11 @@
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
               <h3 class="text-sm font-bold text-slate-900">Módulos Académicos Oficiales</h3>
-              <p class="text-xs text-slate-500">Materiales de estudio obligatorios de Capacitaciones ALR.</p>
-              ${state.modules.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay módulos cargados por el momento.</p>' : `
+              ${state.modules.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay módulos cargados.</p>' : `
                 <div class="grid gap-4 sm:grid-cols-3">
                   ${state.modules.map(m => `
                     <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col justify-between relative">
-                      ${state.user.role === 'admin' ? `<button onclick="deleteModule(${m.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs" title="Eliminar módulo">🗑️</button>` : ''}
+                      ${state.user.role === 'admin' ? `<button onclick="deleteModule(${m.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs">🗑️</button>` : ''}
                       <div>
                         <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 mb-2 inline-block">${m.course}</span>
                         <h4 class="font-bold text-slate-900 text-xs mb-1 pr-6">${m.title}</h4>
@@ -606,14 +592,14 @@
           <div class="space-y-6">
             ${state.user.role === 'admin' ? `
               <div class="bg-red-50 border border-red-200 rounded-xl p-5 shadow-sm">
-                <h3 class="text-xs font-bold text-red-900 uppercase mb-3">➕ Cargar Nueva Clase (Panel de Administrador)</h3>
+                <h3 class="text-xs font-bold text-red-900 uppercase mb-3">➕ Cargar Nueva Clase</h3>
                 <form onsubmit="addPresentation(event)" class="space-y-3">
                   <div class="grid gap-3 sm:grid-cols-2">
-                    <input type="text" id="pptTitle" required placeholder="Título de la Clase (ej. Presentación Sesión 1)" class="p-2 border rounded text-xs bg-white">
-                    <input type="text" id="pptCourse" required placeholder="Programa (ej. Supervisor EDS)" class="p-2 border rounded text-xs bg-white">
+                    <input type="text" id="pptTitle" required placeholder="Título de la Clase" class="p-2 border rounded text-xs bg-white">
+                    <input type="text" id="pptCourse" required placeholder="Programa" class="p-2 border rounded text-xs bg-white">
                   </div>
-                  <textarea id="pptDesc" rows="2" placeholder="Breve descripción de la clase PPT..." class="w-full p-2 border rounded text-xs bg-white resize-none"></textarea>
-                  <input type="text" id="pptUrl" required placeholder="Enlace web PPT (ej. Google Drive, OneDrive o enlace de descarga)" class="w-full p-2 border rounded text-xs bg-white">
+                  <textarea id="pptDesc" rows="2" placeholder="Breve descripción..." class="w-full p-2 border rounded text-xs bg-white resize-none"></textarea>
+                  <input type="text" id="pptUrl" required placeholder="Enlace web PPT" class="w-full p-2 border rounded text-xs bg-white">
                   <div class="flex justify-end">
                     <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-semibold shadow">Cargar Clase</button>
                   </div>
@@ -623,12 +609,11 @@
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
               <h3 class="text-sm font-bold text-slate-900">Presentaciones de Clase (PPT)</h3>
-              <p class="text-xs text-slate-500">Material visual de las clases para visualizar en línea o descargar.</p>
-              ${state.presentations.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay clases PPT cargadas por el momento.</p>' : `
+              ${state.presentations.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay clases PPT cargadas.</p>' : `
                 <div class="grid gap-4 sm:grid-cols-3">
                   ${state.presentations.map(ppt => `
                     <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col justify-between relative">
-                      ${state.user.role === 'admin' ? `<button onclick="deletePresentation(${ppt.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs" title="Eliminar clase">🗑️</button>` : ''}
+                      ${state.user.role === 'admin' ? `<button onclick="deletePresentation(${ppt.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs">🗑️</button>` : ''}
                       <div>
                         <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-800 mb-2 inline-block">${ppt.course}</span>
                         <h4 class="font-bold text-slate-900 text-xs mb-1 pr-6">${ppt.title}</h4>
@@ -649,14 +634,14 @@
           <div class="space-y-6">
             ${state.user.role === 'admin' ? `
               <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 shadow-sm">
-                <h3 class="text-xs font-bold text-blue-900 uppercase mb-3">➕ Cargar Nueva Tarea / Entregable (Panel de Administrador)</h3>
+                <h3 class="text-xs font-bold text-blue-900 uppercase mb-3">➕ Cargar Nueva Tarea</h3>
                 <form onsubmit="addTask(event)" class="space-y-3">
                   <div class="grid gap-3 sm:grid-cols-2">
-                    <input type="text" id="taskTitle" required placeholder="Título de la Tarea (ej. Tarea 1: Auditoría)" class="p-2 border rounded text-xs bg-white">
-                    <input type="text" id="taskDueDate" required placeholder="Fecha límite (ej. Viernes, 11:59 PM)" class="p-2 border rounded text-xs bg-white">
+                    <input type="text" id="taskTitle" required placeholder="Título de la Tarea" class="p-2 border rounded text-xs bg-white">
+                    <input type="text" id="taskDueDate" required placeholder="Fecha límite" class="p-2 border rounded text-xs bg-white">
                   </div>
-                  <textarea id="taskDesc" rows="2" placeholder="Instrucciones o descripción de la tarea..." class="w-full p-2 border rounded text-xs bg-white resize-none"></textarea>
-                  <input type="text" id="taskUrl" required placeholder="Enlace web de la tarea (ej. Documento guía en Drive o PDF)" class="w-full p-2 border rounded text-xs bg-white">
+                  <textarea id="taskDesc" rows="2" placeholder="Instrucciones..." class="w-full p-2 border rounded text-xs bg-white resize-none"></textarea>
+                  <input type="text" id="taskUrl" required placeholder="Enlace web de la tarea" class="w-full p-2 border rounded text-xs bg-white">
                   <div class="flex justify-end">
                     <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold shadow">Cargar Tarea</button>
                   </div>
@@ -666,14 +651,13 @@
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <h3 class="text-sm font-bold text-slate-900 mb-1">Entregables y Tareas de Campo</h3>
-              <p class="text-xs text-slate-500 mb-4">Consulta las tareas y sube tus reportes en PDF directamente a la carpeta oficial.</p>
-              ${state.tasks.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay tareas asignadas por el momento.</p>' : `
+              ${state.tasks.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay tareas asignadas.</p>' : `
                 <div class="space-y-4">
                   ${state.tasks.map(t => {
                     const myGrade = t.grades && t.grades[state.user.email] !== undefined ? t.grades[state.user.email] : null;
                     return `
                       <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative">
-                        ${state.user.role === 'admin' ? `<button onclick="deleteTask(${t.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs" title="Eliminar tarea">🗑️</button>` : ''}
+                        ${state.user.role === 'admin' ? `<button onclick="deleteTask(${t.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs">🗑️</button>` : ''}
                         <div>
                           <div class="flex items-center space-x-2">
                             <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${myGrade !== null ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${myGrade !== null ? 'Completada' : 'Pendiente'}</span>
@@ -681,12 +665,11 @@
                           </div>
                           <h4 class="font-bold text-slate-900 text-xs mt-1 pr-6">${t.title}</h4>
                           <p class="text-[11px] text-slate-600 mt-0.5">${t.desc || ''}</p>
-                          ${myGrade !== null ? `<p class="text-[11px] text-emerald-600 font-bold mt-1">Calificación Obtenida: ${myGrade} / 100 pts</p>` : ''}
+                          ${myGrade !== null ? `<p class="text-[11px] text-emerald-600 font-bold mt-1">Calificación: ${myGrade} / 100 pts</p>` : ''}
                         </div>
                         <div class="flex flex-wrap gap-2 w-full sm:w-auto">
-                          <a href="${t.url}" target="_blank" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded text-xs font-semibold">📄 Ver Tarea</a>
-                          <a href="https://drive.google.com/drive/folders/1DeIHSbZiiSidRHdvJmyPRBpy8VT3WFTP" target="_blank" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold">📤 Cargar Tarea (PDF)</a>
-                          <button onclick="submitTask(${t.id})" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold">✅ Marcar Entregada</button>
+                          <a href="${t.url}" target="_blank" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-slate-800 text-white rounded text-xs font-semibold">📄 Ver Tarea</a>
+                          <button onclick="submitTask(${t.id})" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-semibold">✅ Marcar Entregada</button>
                         </div>
                       </div>
                     `;
@@ -703,9 +686,7 @@
         return `
           <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
             <h3 class="text-sm font-bold text-slate-900">Registro de Calificaciones del Grupo</h3>
-            <p class="text-xs text-slate-500">${state.user.role === 'admin' ? 'Vista de Administrador: Calificaciones detalladas por estudiante.' : 'Vista de Estudiante: Notas del grupo de forma anónima.'}</p>
-            
-            ${state.tasks.length === 0 || studentsList.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">Aún no hay suficientes datos para mostrar calificaciones.</p>' : `
+            ${state.tasks.length === 0 || studentsList.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">Aún no hay suficientes datos para mostrar.</p>' : `
               <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs text-slate-600">
                   <thead class="bg-slate-50 text-slate-700 uppercase text-[9px]">
@@ -748,29 +729,28 @@
         return `
           <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
             <h3 class="text-sm font-bold text-slate-900">Preguntas Directas al Capacitador</h3>
-            <p class="text-xs text-slate-500">Espacio privado de consultas para el profesor Alexis León Rivera.</p>
             <form onsubmit="addQuestion(event)">
-              <textarea id="newQText" rows="2" placeholder="Escribe tu consulta..." class="w-full p-2.5 border rounded text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-none"></textarea>
+              <textarea id="newQText" rows="2" placeholder="Escribe tu consulta..." class="w-full p-2.5 border rounded text-xs focus:outline-none resize-none"></textarea>
               <div class="flex justify-end mt-2">
                 <button type="submit" class="px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-semibold">Enviar Consulta</button>
               </div>
             </form>
             <div class="space-y-3 pt-2">
-              ${state.questions.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay preguntas registradas todavía.</p>' : `
+              ${state.questions.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay preguntas registradas.</p>' : `
                 ${state.questions.map(q => `
                   <div class="border rounded-lg p-3 bg-slate-50 space-y-2 text-xs">
                     <div class="font-bold text-slate-800">Consulta de: ${q.student}</div>
                     <p class="bg-white p-2.5 rounded border">"${q.question}"</p>
                     ${q.answered ? `
                       <div class="bg-emerald-50 border border-emerald-200 p-2.5 rounded text-emerald-900">
-                        <b>Respuesta Oficial de Alexis León Rivera:</b> ${q.answer}
+                        <b>Respuesta Oficial:</b> ${q.answer}
                       </div>
                     ` : (state.user.role === 'admin' ? `
                       <div class="space-y-1 pt-1">
-                        <input type="text" id="ans-${q.id}" placeholder="Escribe la respuesta oficial..." class="w-full bg-white border rounded px-2 py-1 text-xs">
+                        <input type="text" id="ans-${q.id}" placeholder="Escribe la respuesta..." class="w-full bg-white border rounded px-2 py-1 text-xs">
                         <button onclick="answerQuestion(${q.id})" class="bg-emerald-600 text-white px-3 py-1 rounded text-xs font-semibold">Publicar Respuesta</button>
                       </div>
-                    ` : '<span class="text-amber-600 font-semibold text-[11px]">Pendiente de respuesta del capacitador</span>')}
+                    ` : '<span class="text-amber-600 font-semibold text-[11px]">Pendiente de respuesta</span>')}
                   </div>
                 `).join('')}
               `}
@@ -784,14 +764,14 @@
           <form onsubmit="addPhoto(event)" class="bg-white border rounded-xl p-4 shadow-sm mb-6 space-y-2">
             <h4 class="font-bold text-slate-800 text-xs">Compartir nueva foto</h4>
             <div class="grid gap-2 sm:grid-cols-2">
-              <input type="text" id="photoTitle" placeholder="Título (ej. Medición en Pista)" class="p-2 border rounded text-xs bg-white">
+              <input type="text" id="photoTitle" placeholder="Título" class="p-2 border rounded text-xs bg-white">
               <input type="text" id="photoUrl" placeholder="URL de imagen" class="p-2 border rounded text-xs bg-white">
             </div>
             <div class="flex justify-end">
               <button type="submit" class="px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-semibold">Subir Foto</button>
             </div>
           </form>
-          ${state.photos.length === 0 ? '<p class="text-center text-xs text-slate-400 py-8 bg-white rounded-xl border border-slate-200">No hay fotos en la fototeca todavía.</p>' : `
+          ${state.photos.length === 0 ? '<p class="text-center text-xs text-slate-400 py-8 bg-white rounded-xl border border-slate-200">No hay fotos todavía.</p>' : `
             <div class="grid gap-4 sm:grid-cols-2">
               ${state.photos.map(p => `
                 <div class="border rounded-xl overflow-hidden bg-slate-50 shadow-sm">
