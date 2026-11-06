@@ -6,28 +6,27 @@
   <title>Capacitaciones ALR - Portal Web Privado</title>
   <!-- Tailwind CSS por CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS Client por CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-100 font-sans min-h-screen flex flex-col overflow-x-hidden" onclick="handleOutsideClick(event)">
 
   <!-- Contenedor Principal de la App -->
   <div id="app" class="flex-1 flex flex-col"></div>
 
-  <!-- Lógica de la Aplicación -->
+  <!-- Lógica de la Aplicación con Supabase -->
   <script>
-    // 📌 REGISTRA AQUÍ A TODOS TUS ESTUDIANTES OFICIALES
-    // Cada vez que agregues uno nuevo, puedes actualizarlo aquí y subirlo a GitHub.
-    const defaultWhitelist = [
-      { email: 'alexis.leon@capacitacionesalr.com', cedula: '4-700-123', name: 'Alexis León Rivera', role: 'admin' },
-      { email: 'carlos.mendoza@student.com', cedula: '8-900-456', name: 'Carlos Mendoza', role: 'student' }
-      // Agrega más estudiantes aquí abajo respetando el formato:
-      // { email: 'correo@ejemplo.com', cedula: '8-000-000', name: 'Nombre Apellido', role: 'student' },
-    ];
+    // 🔑 CREDENCIALES OFICIALES DE SUPABASE
+    const SUPABASE_URL = 'https://bvnsepupgHgluShNrdGl.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_-B-Lck4vqjF0eLf0UlXJzQ_jOhPg_XH';
 
-    const defaultState = {
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let state = {
       user: null,
       activeTab: 'muro',
       menuOpen: false,
-      whitelist: defaultWhitelist,
+      whitelist: [],
       posts: [],
       modules: [],
       presentations: [],
@@ -36,29 +35,34 @@
       photos: []
     };
 
-    let state = JSON.parse(localStorage.getItem('alr_app_state')) || defaultState;
-    // Forzar actualización de la lista blanca global si ya existía una sesión previa
-    if (!state.whitelist || state.whitelist.length <= 1) {
-      state.whitelist = defaultWhitelist;
-    }
-    state.user = null;
-    state.activeTab = 'muro';
-    state.menuOpen = false;
-
-    function saveState() {
-      localStorage.setItem('alr_app_state', JSON.stringify(state));
-    }
-
     let loginErrorMsg = '';
 
-    function handleLogin(event) {
+    async function loadWhitelist() {
+      try {
+        const { data, error } = await _supabase.from('usuarios').select('*');
+        if (!error && data) {
+          state.whitelist = data;
+        }
+      } catch (err) {
+        console.error('Error al conectar con Supabase:', err);
+      }
+      render();
+    }
+
+    async function handleLogin(event) {
       event.preventDefault();
       const email = document.getElementById('emailInput').value.trim();
       const cedula = document.getElementById('cedulaInput').value.trim();
 
-      const found = state.whitelist.find(u => u.email.toLowerCase() === email.toLowerCase() && u.cedula === cedula);
-      if (found) {
-        state.user = found;
+      const { data, error } = await _supabase
+        .from('usuarios')
+        .select('*')
+        .ilike('email', email)
+        .eq('cedula', cedula)
+        .single();
+
+      if (data && !error) {
+        state.user = data;
         state.activeTab = 'muro';
         state.menuOpen = false;
         loginErrorMsg = '';
@@ -98,7 +102,7 @@
       }
     }
 
-    function addStudent(event) {
+    async function addStudent(event) {
       event.preventDefault();
       const name = document.getElementById('studentName').value.trim();
       const email = document.getElementById('studentEmail').value.trim();
@@ -106,28 +110,30 @@
 
       if (!name || !email || !cedula) return alert('Por favor completa todos los campos.');
 
-      const exists = state.whitelist.some(u => u.email.toLowerCase() === email.toLowerCase() || u.cedula === cedula);
-      if (exists) {
-        alert('Este correo o número de cédula ya se encuentra registrado.');
-        return;
-      }
+      const { error } = await _supabase.from('usuarios').insert([
+        { name: name, email: email, cedula: cedula, role: 'student' }
+      ]);
 
-      state.whitelist.push({
-        email: email,
-        cedula: cedula,
-        name: name,
-        role: 'student'
-      });
-      saveState();
-      render();
-      alert(`¡Estudiante ${name} agregado con éxito!`);
+      if (error) {
+        alert('Error: Este correo ya se encuentra registrado o hubo un problema.');
+        console.error(error);
+      } else {
+        alert(`¡Estudiante ${name} registrado con éxito en la nube! Ya puede entrar desde cualquier dispositivo.`);
+        document.getElementById('studentName').value = '';
+        document.getElementById('studentEmail').value = '';
+        document.getElementById('studentCedula').value = '';
+        loadWhitelist();
+      }
     }
 
-    function deleteStudent(email) {
+    async function deleteStudent(email) {
       if (confirm('¿Deseas revocar el acceso a este estudiante?')) {
-        state.whitelist = state.whitelist.filter(u => u.email !== email);
-        saveState();
-        render();
+        const { error } = await _supabase.from('usuarios').delete().eq('email', email);
+        if (error) {
+          alert('No se pudo eliminar el usuario.');
+        } else {
+          loadWhitelist();
+        }
       }
     }
 
@@ -135,7 +141,6 @@
       event.preventDefault();
       const text = document.getElementById('newPostText').value.trim();
       if (!text) return;
-
       state.posts.unshift({
         id: Date.now(),
         author: state.user.name + (state.user.role === 'admin' ? ' (Capacitador)' : ''),
@@ -145,23 +150,17 @@
         likes: 0,
         comments: []
       });
-      saveState();
       render();
     }
 
     function deletePost(id) {
       state.posts = state.posts.filter(p => p.id !== id);
-      saveState();
       render();
     }
 
     function likePost(id) {
       const p = state.posts.find(item => item.id === id);
-      if (p) {
-        p.likes += 1;
-        saveState();
-        render();
-      }
+      if (p) { p.likes += 1; render(); }
     }
 
     function addComment(postId, event) {
@@ -169,16 +168,9 @@
       const input = document.getElementById(`comment-${postId}`);
       const text = input.value.trim();
       if (!text) return;
-
       const p = state.posts.find(item => item.id === postId);
       if (p) {
-        p.comments.push({
-          id: Date.now(),
-          author: state.user.name,
-          content: text,
-          timestamp: 'Justo ahora'
-        });
-        saveState();
+        p.comments.push({ id: Date.now(), author: state.user.name, content: text, timestamp: 'Justo ahora' });
         render();
       }
     }
@@ -189,25 +181,15 @@
       const course = document.getElementById('modCourse').value.trim();
       const desc = document.getElementById('modDesc').value.trim();
       const url = document.getElementById('modUrl').value.trim();
-
-      if (!title || !course || !url) return alert('Por favor completa los campos obligatorios.');
-
-      state.modules.push({
-        id: Date.now(),
-        course: course,
-        title: title,
-        desc: desc,
-        url: url
-      });
-      saveState();
+      if (!title || !course || !url) return alert('Completa los campos obligatorios.');
+      state.modules.push({ id: Date.now(), course, title, desc, url });
       render();
-      alert('¡Módulo cargado con éxito!');
+      alert('¡Módulo cargado!');
     }
 
     function deleteModule(id) {
-      if (confirm('¿Deseas eliminar este módulo?')) {
+      if (confirm('¿Eliminar módulo?')) {
         state.modules = state.modules.filter(m => m.id !== id);
-        saveState();
         render();
       }
     }
@@ -218,25 +200,15 @@
       const course = document.getElementById('pptCourse').value.trim();
       const desc = document.getElementById('pptDesc').value.trim();
       const url = document.getElementById('pptUrl').value.trim();
-
-      if (!title || !course || !url) return alert('Por favor completa los campos obligatorios.');
-
-      state.presentations.push({
-        id: Date.now(),
-        course: course,
-        title: title,
-        desc: desc,
-        url: url
-      });
-      saveState();
+      if (!title || !course || !url) return alert('Completa los campos obligatorios.');
+      state.presentations.push({ id: Date.now(), course, title, desc, url });
       render();
-      alert('¡Clase PPT cargada con éxito!');
+      alert('¡Clase PPT cargada!');
     }
 
     function deletePresentation(id) {
-      if (confirm('¿Deseas eliminar esta clase PPT?')) {
+      if (confirm('¿Eliminar clase?')) {
         state.presentations = state.presentations.filter(p => p.id !== id);
-        saveState();
         render();
       }
     }
@@ -247,38 +219,25 @@
       const dueDate = document.getElementById('taskDueDate').value.trim();
       const desc = document.getElementById('taskDesc').value.trim();
       const url = document.getElementById('taskUrl').value.trim();
-
-      if (!title || !dueDate || !url) return alert('Por favor completa los campos obligatorios.');
-
-      state.tasks.push({
-        id: Date.now(),
-        title: title,
-        desc: desc,
-        dueDate: dueDate,
-        status: 'Pendiente',
-        grades: {},
-        url: url
-      });
-      saveState();
+      if (!title || !dueDate || !url) return alert('Completa los campos obligatorios.');
+      state.tasks.push({ id: Date.now(), title, desc, dueDate, status: 'Pendiente', grades: {}, url });
       render();
-      alert('¡Tarea cargada con éxito!');
+      alert('¡Tarea cargada!');
     }
 
     function deleteTask(id) {
-      if (confirm('¿Deseas eliminar esta tarea?')) {
+      if (confirm('¿Eliminar tarea?')) {
         state.tasks = state.tasks.filter(t => t.id !== id);
-        saveState();
         render();
       }
     }
 
     function submitTask(taskId) {
-      alert('¡Tarea enviada con éxito! Calificación automática generada: 100 pts.');
+      alert('¡Tarea enviada! Calificación automática: 100 pts.');
       const t = state.tasks.find(item => item.id === taskId);
       if (t) {
         if (!t.grades) t.grades = {};
         t.grades[state.user.email] = 100;
-        saveState();
         render();
       }
     }
@@ -288,7 +247,6 @@
       if (t) {
         if (!t.grades) t.grades = {};
         t.grades[studentEmail] = val === '' ? null : Number(val);
-        saveState();
       }
     }
 
@@ -296,15 +254,7 @@
       event.preventDefault();
       const text = document.getElementById('newQText').value.trim();
       if (!text) return;
-
-      state.questions.push({
-        id: Date.now(),
-        student: state.user.name,
-        question: text,
-        answer: '',
-        answered: false
-      });
-      saveState();
+      state.questions.push({ id: Date.now(), student: state.user.name, question: text, answer: '', answered: false });
       render();
     }
 
@@ -312,14 +262,8 @@
       const input = document.getElementById(`ans-${qId}`);
       const text = input.value.trim();
       if (!text) return;
-
       const q = state.questions.find(item => item.id === qId);
-      if (q) {
-        q.answer = text;
-        q.answered = true;
-        saveState();
-        render();
-      }
+      if (q) { q.answer = text; q.answered = true; render(); }
     }
 
     function addPhoto(event) {
@@ -327,24 +271,18 @@
       const title = document.getElementById('photoTitle').value.trim();
       const url = document.getElementById('photoUrl').value.trim();
       if (!title || !url) return;
-
-      state.photos.unshift({
-        id: Date.now(),
-        title: title,
-        author: state.user.name,
-        url: url
-      });
-      saveState();
+      state.photos.unshift({ id: Date.now(), title, author: state.user.name, url });
       render();
     }
 
     function resetSalonData() {
-      if (confirm('¿Estás seguro de limpiar todos los datos del salón actual para iniciar con un nuevo grupo? Se borrarán todos los registros.')) {
-        localStorage.removeItem('alr_app_state');
-        state = JSON.parse(JSON.stringify(defaultState));
-        state.user = { name: 'Alexis León Rivera', role: 'admin', email: 'alexis.leon@capacitacionesalr.com' };
-        state.activeTab = 'muro';
-        state.menuOpen = false;
+      if (confirm('¿Limpiar datos del salón actual?')) {
+        state.posts = [];
+        state.modules = [];
+        state.presentations = [];
+        state.tasks = [];
+        state.questions = [];
+        state.photos = [];
         render();
         alert('¡Salón reiniciado con éxito!');
       }
@@ -360,7 +298,7 @@
               <div class="text-center mb-6">
                 <div class="inline-flex p-3 bg-emerald-50 rounded-full text-emerald-600 mb-2 font-bold text-xl">🛡️</div>
                 <h1 class="text-2xl font-bold text-slate-800">Capacitaciones ALR</h1>
-                <p class="text-xs text-slate-500 mt-1">Portal Educativo Privado y Seguro</p>
+                <p class="text-xs text-slate-500 mt-1">Portal Educativo Privado (Supabase Cloud)</p>
               </div>
 
               ${loginErrorMsg ? `<div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs font-semibold">${loginErrorMsg}</div>` : ''}
@@ -397,7 +335,7 @@
 
             <div class="flex items-center space-x-3">
               ${state.user.role === 'admin' ? `
-                <button onclick="resetSalonData()" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1.5 rounded text-[11px] font-semibold transition hidden sm:inline-block" title="Limpiar datos">
+                <button onclick="resetSalonData()" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1.5 rounded text-[11px] font-semibold transition hidden sm:inline-block">
                   🔄 Resetear Salón
                 </button>
               ` : ''}
@@ -464,7 +402,7 @@
         return `
           <div class="space-y-6">
             <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-5 shadow-sm">
-              <h3 class="text-xs font-bold text-emerald-900 uppercase mb-3">➕ Registrar Nuevo Estudiante</h3>
+              <h3 class="text-xs font-bold text-emerald-900 uppercase mb-3">➕ Registrar Nuevo Estudiante en la Nube</h3>
               <form onsubmit="addStudent(event)" class="space-y-3">
                 <div class="grid gap-3 sm:grid-cols-3">
                   <input type="text" id="studentName" required placeholder="Nombre completo" class="p-2 border rounded text-xs bg-white">
@@ -472,13 +410,13 @@
                   <input type="text" id="studentCedula" required placeholder="Número de cédula" class="p-2 border rounded text-xs bg-white">
                 </div>
                 <div class="flex justify-end">
-                  <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold shadow">Registrar Estudiante</button>
+                  <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold shadow">Guardar en Base de Datos</button>
                 </div>
               </form>
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
-              <h3 class="text-sm font-bold text-slate-900">Estudiantes Autorizados</h3>
+              <h3 class="text-sm font-bold text-slate-900">Estudiantes Autorizados en Supabase</h3>
               ${studentsList.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay estudiantes registrados.</p>' : `
                 <div class="overflow-x-auto">
                   <table class="w-full text-left text-xs text-slate-600">
@@ -790,7 +728,7 @@
       }
     }
 
-    render();
+    loadWhitelist();
   </script>
 </body>
 </html>
