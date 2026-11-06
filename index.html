@@ -17,7 +17,7 @@
   <!-- Lógica de la Aplicación con Supabase -->
   <script>
     // 🔑 CREDENCIALES OFICIALES DE SUPABASE
-    const SUPABASE_URL = 'https://bvnsepupghgluqnhrdgl.supabase.co';
+    const SUPABASE_URL = 'https://bvnsepupgHgluShNrdGl.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_-B-Lck4vqjF0eLf0UlXJzQ_jOhPg_XH';
 
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -37,12 +37,15 @@
 
     let loginErrorMsg = '';
 
-    async function loadWhitelist() {
+    async function loadData() {
       try {
-        const { data, error } = await _supabase.from('usuarios').select('*');
-        if (!error && data) {
-          state.whitelist = data;
-        }
+        // Cargar usuarios autorizados
+        const { data: usersData } = await _supabase.from('usuarios').select('*');
+        if (usersData) state.whitelist = usersData;
+
+        // Cargar publicaciones del Muro Social desde la nube
+        const { data: postsData } = await _supabase.from('posts').select('*').order('id', { ascending: false });
+        if (postsData) state.posts = postsData;
       } catch (err) {
         console.error('Error al conectar con Supabase:', err);
       }
@@ -74,7 +77,7 @@
         state.activeTab = 'muro';
         state.menuOpen = false;
         loginErrorMsg = '';
-        render();
+        loadData();
       } else {
         loginErrorMsg = 'Correo o número de cédula no autorizado o incorrecto.';
         render();
@@ -89,6 +92,7 @@
     function setTab(tab) {
       state.activeTab = tab;
       state.menuOpen = false;
+      if (tab === 'muro') loadData();
       render();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -124,51 +128,60 @@
 
       if (error) {
         alert('Error: Este correo ya se encuentra registrado o hubo un problema.');
-        console.error(error);
       } else {
-        alert(`¡Estudiante ${name} registrado con éxito en la nube! Ya puede entrar desde cualquier dispositivo.`);
+        alert(`¡Estudiante ${name} registrado con éxito en la nube!`);
         document.getElementById('studentName').value = '';
         document.getElementById('studentEmail').value = '';
         document.getElementById('studentCedula').value = '';
-        loadWhitelist();
+        loadData();
       }
     }
 
     async function deleteStudent(email) {
       if (confirm('¿Deseas revocar el acceso a este estudiante?')) {
         const { error } = await _supabase.from('usuarios').delete().eq('email', email);
-        if (error) {
-          alert('No se pudo eliminar el usuario.');
-        } else {
-          loadWhitelist();
-        }
+        if (!error) loadData();
       }
     }
 
-    function addPost(event) {
+    // 🚀 NUEVA FUNCIÓN: Publicar en el Muro Social conectada a Supabase
+    async function addPost(event) {
       event.preventDefault();
       const text = document.getElementById('newPostText').value.trim();
       if (!text) return;
-      state.posts.unshift({
-        id: Date.now(),
+
+      const newPost = {
         author: state.user.name + (state.user.role === 'admin' ? ' (Capacitador)' : ''),
         role: state.user.role,
         content: text,
         timestamp: 'Justo ahora',
-        likes: 0,
-        comments: []
-      });
-      render();
+        likes: 0
+      };
+
+      const { error } = await _supabase.from('posts').insert([newPost]);
+
+      if (error) {
+        alert('No se pudo publicar en el muro.');
+      } else {
+        document.getElementById('newPostText').value = '';
+        loadData(); // Recarga los posts desde la nube para que todos los vean
+      }
     }
 
-    function deletePost(id) {
-      state.posts = state.posts.filter(p => p.id !== id);
-      render();
+    async function deletePost(id) {
+      if (confirm('¿Eliminar esta publicación?')) {
+        const { error } = await _supabase.from('posts').delete().eq('id', id);
+        if (!error) loadData();
+      }
     }
 
-    function likePost(id) {
-      const p = state.posts.find(item => item.id === id);
-      if (p) { p.likes += 1; render(); }
+    async function likePost(id, currentLikes) {
+      const { error } = await _supabase
+        .from('posts')
+        .update({ likes: currentLikes + 1 })
+        .eq('id', id);
+      
+      if (!error) loadData();
     }
 
     function addModule(event) {
@@ -343,7 +356,6 @@
                 Salir
               </button>
 
-              <!-- Menú Hamburguesa -->
               <button id="menuBtn" onclick="toggleMenu(event)" class="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg focus:outline-none flex flex-col justify-center items-center w-9 h-9 space-y-1">
                 <span class="block w-5 h-0.5 bg-white"></span>
                 <span class="block w-5 h-0.5 bg-white"></span>
@@ -352,7 +364,6 @@
             </div>
           </div>
 
-          <!-- Menú desplegable -->
           ${state.menuOpen ? `
             <div id="dropdownMenu" class="absolute top-full right-4 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-slate-200 py-2 z-50 text-slate-800">
               <div class="px-4 py-2 border-b border-slate-100 sm:hidden">
@@ -381,7 +392,6 @@
           ` : ''}
         </header>
 
-        <!-- Contenido principal -->
         <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6">
           ${renderTabContent()}
         </main>
@@ -470,7 +480,7 @@
                   </div>
                   <p class="text-slate-700 text-xs">${p.content}</p>
                   <div class="flex items-center space-x-3 pt-2 border-t border-slate-100 text-xs">
-                    <button onclick="likePost(${p.id})" class="text-emerald-600 font-semibold hover:underline">👍 ${p.likes} Me gusta</button>
+                    <button onclick="likePost(${p.id}, ${p.likes})" class="text-emerald-600 font-semibold hover:underline">👍 ${p.likes} Me gusta</button>
                   </div>
                 </div>
               `).join('')}
@@ -724,7 +734,7 @@
       }
     }
 
-    loadWhitelist();
+    loadData();
   </script>
 </body>
 </html>
