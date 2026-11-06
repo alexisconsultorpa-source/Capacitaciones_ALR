@@ -306,11 +306,11 @@
               <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
                   <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Correo Electrónico</label>
-                  <input type="email" id="emailInput" required placeholder="ej. correo@estudiante.com" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                  <input type="email" id="emailInput" required value="alexis.consultor.pa@gmail.com" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
                 <div>
                   <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Número de Cédula</label>
-                  <input type="text" id="cedulaInput" required placeholder="ej. 8-900-456" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                  <input type="text" id="cedulaInput" required value="4-739-436" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
                 <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg text-xs shadow transition">
                   Ingresar al Campus Privado
@@ -397,7 +397,6 @@
     }
 
     function renderTabContent() {
-      // 📌 Pestaña de Gestión de Grupo (Cargada correctamente)
       if (state.activeTab === 'estudiantes' && state.user.role === 'admin') {
         const studentsList = state.whitelist.filter(u => u.role === 'student');
         return `
