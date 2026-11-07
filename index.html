@@ -671,7 +671,6 @@
 
                     const isExpanded = state.expandedStudentEmail === st.email;
 
-                    // Cálculo del promedio ponderado general basado en las notas de cada módulo
                     let totalSum = 0;
                     let countMods = state.tasks.length > 0 ? state.tasks.length : 1;
 
@@ -681,7 +680,6 @@
                       const clas = Number(g.clase) || 0;
                       const prac = Number(g.practico) || 0;
                       
-                      // Aplicando la ponderación oficial: Práctico 70%, Clase 20%, Asistencia 10%
                       const modPonderado = (asis * 0.10) + (clas * 0.20) + (prac * 0.70);
                       totalSum += modPonderado;
                     });
@@ -735,13 +733,13 @@
                                         <div>
                                           <label class="block text-slate-500 text-[9px] mb-0.5 font-semibold">Clase (20%)</label>
                                           ${isAdmin ? `
-                                            <input type="number" min="0" max="100" value="${grades.clase}" onchange="updateDetailedGrade(${t.id}, '${st.email}', 'clase', this.value)" class="w-full p-1 border rounded text-xs font-bold text-emerald-700 bg-slate-50">
+                                            <input type="number" min="0" max="100" value="${grades.clase}" onchange="updateDetailedGrade(${t.id}, '${st.email}', 'clase', this.value)" class="w-full p-1 border rounded text-center text-xs font-bold text-emerald-700 bg-slate-50">
                                           ` : `<span class="font-bold text-slate-700">${grades.clase}</span>`}
                                         </div>
                                         <div>
                                           <label class="block text-slate-500 text-[9px] mb-0.5 font-semibold">Práct. (70%)</label>
                                           ${isAdmin ? `
-                                            <input type="number" min="0" max="100" value="${grades.practico}" onchange="updateDetailedGrade(${t.id}, '${st.email}', 'practico', this.value)" class="w-full p-1 border rounded text-xs font-bold text-emerald-700 bg-slate-50">
+                                            <input type="number" min="0" max="100" value="${grades.practico}" onchange="updateDetailedGrade(${t.id}, '${st.email}', 'practico', this.value)" class="w-full p-1 border rounded text-center text-xs font-bold text-emerald-700 bg-slate-50">
                                           ` : `<span class="font-bold text-slate-700">${grades.practico}</span>`}
                                         </div>
                                       </div>
