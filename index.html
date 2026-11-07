@@ -4,19 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Capacitaciones ALR - Portal Web Privado</title>
-  <!-- Tailwind CSS por CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Supabase JS Client por CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-100 font-sans min-h-screen flex flex-col overflow-x-hidden" onclick="handleOutsideClick(event)">
 
-  <!-- Contenedor Principal de la App -->
   <div id="app" class="flex-1 flex flex-col"></div>
 
-  <!-- Lógica de la Aplicación con Supabase -->
   <script>
-    // 🔑 CREDENCIALES OFICIALES DE SUPABASE CORREGIDAS
     const SUPABASE_URL = 'https://bvnsepupghgluqnhrdgl.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_-B-Lck4vqjF0eLf0UlXJzQ_jOhPg_XH';
 
@@ -39,13 +34,26 @@
 
     async function loadData() {
       try {
-        // Cargar usuarios autorizados
         const { data: usersData } = await _supabase.from('usuarios').select('*');
         if (usersData) state.whitelist = usersData;
 
-        // Cargar publicaciones del Muro Social desde la nube
         const { data: postsData } = await _supabase.from('posts').select('*').order('id', { ascending: false });
         if (postsData) state.posts = postsData;
+
+        const { data: modData } = await _supabase.from('modules').select('*').order('id', { ascending: false });
+        if (modData) state.modules = modData;
+
+        const { data: pptData } = await _supabase.from('presentations').select('*').order('id', { ascending: false });
+        if (pptData) state.presentations = pptData;
+
+        const { data: taskData } = await _supabase.from('tasks').select('*').order('id', { ascending: false });
+        if (taskData) state.tasks = taskData;
+
+        const { data: qData } = await _supabase.from('questions').select('*').order('id', { ascending: false });
+        if (qData) state.questions = qData;
+
+        const { data: photoData } = await _supabase.from('photos').select('*').order('id', { ascending: false });
+        if (photoData) state.photos = photoData;
       } catch (err) {
         console.error('Error al conectar con Supabase:', err);
       }
@@ -57,12 +65,10 @@
       const email = document.getElementById('emailInput').value.trim().toLowerCase();
       const cedula = document.getElementById('cedulaInput').value.trim();
 
-      const { data, error } = await _supabase
-        .from('usuarios')
-        .select('*');
+      const { data, error } = await _supabase.from('usuarios').select('*');
 
       if (error || !data) {
-        loginErrorMsg = 'Error al conectar con la base de datos de Supabase.';
+        loginErrorMsg = 'Error al conectar con la base de datos.';
         render();
         return;
       }
@@ -92,8 +98,7 @@
     function setTab(tab) {
       state.activeTab = tab;
       state.menuOpen = false;
-      if (tab === 'muro') loadData();
-      render();
+      loadData();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -120,19 +125,13 @@
       const email = document.getElementById('studentEmail').value.trim().toLowerCase();
       const cedula = document.getElementById('studentCedula').value.trim();
 
-      if (!name || !email || !cedula) return alert('Por favor completa todos los campos.');
+      if (!name || !email || !cedula) return alert('Completa todos los campos.');
 
-      const { error } = await _supabase.from('usuarios').insert([
-        { name: name, email: email, cedula: cedula, role: 'student' }
-      ]);
-
+      const { error } = await _supabase.from('usuarios').insert([{ name, email, cedula, role: 'student' }]);
       if (error) {
-        alert('Error: Este correo ya se encuentra registrado o hubo un problema.');
+        alert('Error al registrar estudiante.');
       } else {
-        alert(`¡Estudiante ${name} registrado con éxito en la nube!`);
-        document.getElementById('studentName').value = '';
-        document.getElementById('studentEmail').value = '';
-        document.getElementById('studentCedula').value = '';
+        alert(`¡Estudiante ${name} registrado con éxito!`);
         loadData();
       }
     }
@@ -148,151 +147,149 @@
       event.preventDefault();
       const text = document.getElementById('newPostText').value.trim();
       if (!text) return;
-
-      const newPost = {
+      const { error } = await _supabase.from('posts').insert([{
         author: state.user.name + (state.user.role === 'admin' ? ' (Capacitador)' : ''),
         role: state.user.role,
         content: text,
         timestamp: 'Justo ahora',
         likes: 0
-      };
-
-      const { error } = await _supabase.from('posts').insert([newPost]);
-
-      if (error) {
-        alert('No se pudo publicar en el muro.');
-      } else {
-        document.getElementById('newPostText').value = '';
-        loadData();
-      }
+      }]);
+      if (!error) { document.getElementById('newPostText').value = ''; loadData(); }
     }
 
     async function deletePost(id) {
-      if (confirm('¿Eliminar esta publicación?')) {
+      if (confirm('¿Eliminar publicación?')) {
         const { error } = await _supabase.from('posts').delete().eq('id', id);
         if (!error) loadData();
       }
     }
 
     async function likePost(id, currentLikes) {
-      const { error } = await _supabase
-        .from('posts')
-        .update({ likes: currentLikes + 1 })
-        .eq('id', id);
-      
+      const { error } = await _supabase.from('posts').update({ likes: currentLikes + 1 }).eq('id', id);
       if (!error) loadData();
     }
 
-    function addModule(event) {
+    async function addModule(event) {
       event.preventDefault();
       const title = document.getElementById('modTitle').value.trim();
       const course = document.getElementById('modCourse').value.trim();
       const desc = document.getElementById('modDesc').value.trim();
       const url = document.getElementById('modUrl').value.trim();
       if (!title || !course || !url) return alert('Completa los campos obligatorios.');
-      state.modules.push({ id: Date.now(), course, title, desc, url });
-      render();
-      alert('¡Módulo cargado!');
+
+      const { error } = await _supabase.from('modules').insert([{ title, course, desc, url }]);
+      if (!error) { alert('¡Módulo cargado en la nube!'); loadData(); }
     }
 
-    function deleteModule(id) {
+    async function deleteModule(id) {
       if (confirm('¿Eliminar módulo?')) {
-        state.modules = state.modules.filter(m => m.id !== id);
-        render();
+        const { error } = await _supabase.from('modules').delete().eq('id', id);
+        if (!error) loadData();
       }
     }
 
-    function addPresentation(event) {
+    async function addPresentation(event) {
       event.preventDefault();
       const title = document.getElementById('pptTitle').value.trim();
       const course = document.getElementById('pptCourse').value.trim();
       const desc = document.getElementById('pptDesc').value.trim();
       const url = document.getElementById('pptUrl').value.trim();
       if (!title || !course || !url) return alert('Completa los campos obligatorios.');
-      state.presentations.push({ id: Date.now(), course, title, desc, url });
-      render();
-      alert('¡Clase PPT cargada!');
+
+      const { error } = await _supabase.from('presentations').insert([{ title, course, desc, url }]);
+      if (!error) { alert('¡Clase PPT cargada en la nube!'); loadData(); }
     }
 
-    function deletePresentation(id) {
+    async function deletePresentation(id) {
       if (confirm('¿Eliminar clase?')) {
-        state.presentations = state.presentations.filter(p => p.id !== id);
-        render();
+        const { error } = await _supabase.from('presentations').delete().eq('id', id);
+        if (!error) loadData();
       }
     }
 
-    function addTask(event) {
+    async function addTask(event) {
       event.preventDefault();
       const title = document.getElementById('taskTitle').value.trim();
       const dueDate = document.getElementById('taskDueDate').value.trim();
       const desc = document.getElementById('taskDesc').value.trim();
       const url = document.getElementById('taskUrl').value.trim();
       if (!title || !dueDate || !url) return alert('Completa los campos obligatorios.');
-      state.tasks.push({ id: Date.now(), title, desc, dueDate, status: 'Pendiente', grades: {}, url });
-      render();
-      alert('¡Tarea cargada!');
+
+      const { error } = await _supabase.from('tasks').insert([{ title, due_date: dueDate, desc, url, grades: {} }]);
+      if (!error) { alert('¡Tarea cargada en la nube!'); loadData(); }
     }
 
-    function deleteTask(id) {
+    async function deleteTask(id) {
       if (confirm('¿Eliminar tarea?')) {
-        state.tasks = state.tasks.filter(t => t.id !== id);
-        render();
+        const { error } = await _supabase.from('tasks').delete().eq('id', id);
+        if (!error) loadData();
       }
     }
 
-    function submitTask(taskId) {
+    async function submitTask(taskId, currentGrades) {
       alert('¡Tarea enviada! Calificación automática: 100 pts.');
-      const t = state.tasks.find(item => item.id === taskId);
-      if (t) {
-        if (!t.grades) t.grades = {};
-        t.grades[state.user.email] = 100;
-        render();
-      }
+      let gradesObj = currentGrades || {};
+      gradesObj[state.user.email] = 100;
+
+      const { error } = await _supabase.from('tasks').update({ grades: gradesObj }).eq('id', taskId);
+      if (!error) loadData();
     }
 
-    function updateGradeAdmin(taskId, studentEmail, val) {
-      const t = state.tasks.find(item => item.id === taskId);
-      if (t) {
-        if (!t.grades) t.grades = {};
-        t.grades[studentEmail] = val === '' ? null : Number(val);
+    async function updateGradeAdmin(taskId, studentEmail, val, currentGrades) {
+      let gradesObj = currentGrades || {};
+      if (val === '') {
+        delete gradesObj[studentEmail];
+      } else {
+        gradesObj[studentEmail] = Number(val);
       }
+
+      const { error } = await _supabase.from('tasks').update({ grades: gradesObj }).eq('id', taskId);
+      if (!error) loadData();
     }
 
-    function addQuestion(event) {
+    async function addQuestion(event) {
       event.preventDefault();
       const text = document.getElementById('newQText').value.trim();
       if (!text) return;
-      state.questions.push({ id: Date.now(), student: state.user.name, question: text, answer: '', answered: false });
-      render();
+
+      const { error } = await _supabase.from('questions').insert([{
+        student: state.user.name,
+        question: text,
+        answer: '',
+        answered: false
+      }]);
+      if (!error) { document.getElementById('newQText').value = ''; loadData(); }
     }
 
-    function answerQuestion(qId) {
+    async function answerQuestion(qId) {
       const input = document.getElementById(`ans-${qId}`);
       const text = input.value.trim();
       if (!text) return;
-      const q = state.questions.find(item => item.id === qId);
-      if (q) { q.answer = text; q.answered = true; render(); }
+
+      const { error } = await _supabase.from('questions').update({ answer: text, answered: true }).eq('id', qId);
+      if (!error) loadData();
     }
 
-    function addPhoto(event) {
+    async function addPhoto(event) {
       event.preventDefault();
       const title = document.getElementById('photoTitle').value.trim();
       const url = document.getElementById('photoUrl').value.trim();
       if (!title || !url) return;
-      state.photos.unshift({ id: Date.now(), title, author: state.user.name, url });
-      render();
+
+      const { error } = await _supabase.from('photos').insert([{ title, author: state.user.name, url }]);
+      if (!error) { alert('¡Foto subida a la fototeca!'); loadData(); }
     }
 
-    function resetSalonData() {
-      if (confirm('¿Limpiar datos del salón actual?')) {
-        state.posts = [];
-        state.modules = [];
-        state.presentations = [];
-        state.tasks = [];
-        state.questions = [];
-        state.photos = [];
-        render();
-        alert('¡Salón reiniciado con éxito!');
+    async function resetSalonData() {
+      if (confirm('¿Estás seguro de eliminar todo el contenido del salón?')) {
+        await _supabase.from('posts').delete().neq('id', 0);
+        await _supabase.from('modules').delete().neq('id', 0);
+        await _supabase.from('presentations').delete().neq('id', 0);
+        await _supabase.from('tasks').delete().neq('id', 0);
+        await _supabase.from('questions').delete().neq('id', 0);
+        await _supabase.from('photos').delete().neq('id', 0);
+        loadData();
+        alert('¡Salón reiniciado por completo!');
       }
     }
 
@@ -518,7 +515,7 @@
                       <div>
                         <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 mb-2 inline-block">${m.course}</span>
                         <h4 class="font-bold text-slate-900 text-xs mb-1 pr-6">${m.title}</h4>
-                        <p class="text-[11px] text-slate-600 mb-4">${m.desc}</p>
+                        <p class="text-[11px] text-slate-600 mb-4">${m.desc || ''}</p>
                       </div>
                       <a href="${m.url}" target="_blank" class="block text-center w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold">📄 Ver Módulo</a>
                     </div>
@@ -560,7 +557,7 @@
                       <div>
                         <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-800 mb-2 inline-block">${ppt.course}</span>
                         <h4 class="font-bold text-slate-900 text-xs mb-1 pr-6">${ppt.title}</h4>
-                        <p class="text-[11px] text-slate-600 mb-4">${ppt.desc}</p>
+                        <p class="text-[11px] text-slate-600 mb-4">${ppt.desc || ''}</p>
                       </div>
                       <a href="${ppt.url}" target="_blank" class="block text-center w-full py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-semibold">📊 Ver Clase PPT</a>
                     </div>
@@ -597,14 +594,15 @@
               ${state.tasks.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay tareas asignadas.</p>' : `
                 <div class="space-y-4">
                   ${state.tasks.map(t => {
-                    const myGrade = t.grades && t.grades[state.user.email] !== undefined ? t.grades[state.user.email] : null;
+                    const grades = t.grades || {};
+                    const myGrade = grades[state.user.email] !== undefined ? grades[state.user.email] : null;
                     return `
                       <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative">
                         ${state.user.role === 'admin' ? `<button onclick="deleteTask(${t.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs">🗑️</button>` : ''}
                         <div>
                           <div class="flex items-center space-x-2">
                             <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${myGrade !== null ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${myGrade !== null ? 'Completada' : 'Pendiente'}</span>
-                            <span class="text-[10px] text-slate-400">📅 Entrega: ${t.dueDate}</span>
+                            <span class="text-[10px] text-slate-400">📅 Entrega: ${t.due_date}</span>
                           </div>
                           <h4 class="font-bold text-slate-900 text-xs mt-1 pr-6">${t.title}</h4>
                           <p class="text-[11px] text-slate-600 mt-0.5">${t.desc || ''}</p>
@@ -612,7 +610,7 @@
                         </div>
                         <div class="flex flex-wrap gap-2 w-full sm:w-auto">
                           <a href="${t.url}" target="_blank" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-slate-800 text-white rounded text-xs font-semibold">📄 Ver Tarea</a>
-                          <button onclick="submitTask(${t.id})" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-semibold">✅ Marcar Entregada</button>
+                          <button onclick="submitTask(${t.id}, ${JSON.stringify(grades).replace(/"/g, '&quot;')})" class="flex-1 sm:flex-none text-center px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-semibold">✅ Marcar Entregada</button>
                         </div>
                       </div>
                     `;
@@ -646,11 +644,12 @@
                         <tr class="${isMe && state.user.role !== 'admin' ? 'bg-emerald-50/50 font-semibold' : ''}">
                           <td class="py-2.5 px-3 font-bold text-slate-800">${displayName}</td>
                           ${state.tasks.map(t => {
-                            const gradeVal = t.grades && t.grades[st.email] !== undefined && t.grades[st.email] !== null ? t.grades[st.email] : '-';
+                            const grades = t.grades || {};
+                            const gradeVal = grades[st.email] !== undefined && grades[st.email] !== null ? grades[st.email] : '-';
                             if (state.user.role === 'admin') {
                               return `
                                 <td class="py-2.5 px-3 text-center">
-                                  <input type="number" min="0" max="100" value="${gradeVal === '-' ? '' : gradeVal}" onchange="updateGradeAdmin(${t.id}, '${st.email}', this.value)" class="w-16 p-1 border rounded text-center text-xs bg-white font-bold text-emerald-600" placeholder="-">
+                                  <input type="number" min="0" max="100" value="${gradeVal === '-' ? '' : gradeVal}" onchange="updateGradeAdmin(${t.id}, '${st.email}', this.value, ${JSON.stringify(grades).replace(/"/g, '&quot;')})" class="w-16 p-1 border rounded text-center text-xs bg-white font-bold text-emerald-600" placeholder="-">
                                 </td>
                               `;
                             } else {
