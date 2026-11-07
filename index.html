@@ -34,8 +34,7 @@
       modules: [],
       presentations: [],
       tasks: [],
-      questions: [],
-      photos: []
+      questions: []
     };
 
     let loginErrorMsg = '';
@@ -59,9 +58,6 @@
 
         const { data: qData } = await _supabase.from('questions').select('*').order('id', { ascending: false });
         if (qData) state.questions = qData;
-
-        const { data: photoData } = await _supabase.from('photos').select('*').order('id', { ascending: false });
-        if (photoData) state.photos = photoData;
       } catch (err) {
         console.error('Error al conectar con Supabase:', err);
       }
@@ -298,16 +294,6 @@
       if (!error) loadData();
     }
 
-    async function addPhoto(event) {
-      event.preventDefault();
-      const title = document.getElementById('photoTitle').value.trim();
-      const url = document.getElementById('photoUrl').value.trim();
-      if (!title || !url) return;
-
-      const { error } = await _supabase.from('photos').insert([{ title, author: state.user.name, url }]);
-      if (!error) { alert('¡Foto subida a la fototeca!'); loadData(); }
-    }
-
     async function resetSalonData() {
       if (confirm('¿Estás seguro de eliminar todo el contenido del salón?')) {
         await _supabase.from('posts').delete().neq('id', 0);
@@ -315,7 +301,6 @@
         await _supabase.from('presentations').delete().neq('id', 0);
         await _supabase.from('tasks').delete().neq('id', 0);
         await _supabase.from('questions').delete().neq('id', 0);
-        await _supabase.from('photos').delete().neq('id', 0);
         loadData();
         alert('¡Salón reiniciado por completo!');
       }
@@ -400,7 +385,6 @@
               <button onclick="setTab('tareas')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'tareas' ? 'text-emerald-700 bg-emerald-50' : ''}">📝 Módulos de Evaluación (Máx 13)</button>
               <button onclick="setTab('calificaciones')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'calificaciones' ? 'text-emerald-700 bg-emerald-50' : ''}">🏆 Registro Detallado (PDF)</button>
               <button onclick="setTab('preguntas')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'preguntas' ? 'text-emerald-700 bg-emerald-50' : ''}">❓ Preguntas</button>
-              <button onclick="setTab('fototeca')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'fototeca' ? 'text-emerald-700 bg-emerald-50' : ''}">📷 Fototeca</button>
               
               ${state.user.role === 'admin' ? `
                 <button onclick="setTab('estudiantes')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 border-t border-slate-100 ${state.activeTab === 'estudiantes' ? 'text-emerald-700 bg-emerald-50' : ''}">👥 Gestión de Grupo</button>
@@ -646,7 +630,6 @@
 
         return `
           <div class="space-y-4">
-            <!-- Barra de Herramientas Superior limpia (Solo Título y Botón) -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
               <div>
                 <h3 class="text-sm font-bold text-slate-900">Registro General de Calificaciones por Módulos</h3>
@@ -658,7 +641,6 @@
               ` : ''}
             </div>
 
-            <!-- Contenedor PDF con el esquema detallado -->
             <div id="pdfTableContainer" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
               <div class="text-center pb-2 border-b">
                 <h2 class="font-bold text-sm text-slate-800 uppercase">Capacitaciones ALR - Registro Detallado de Calificaciones</h2>
@@ -693,7 +675,6 @@
 
                     return `
                       <div class="border border-slate-200 rounded-xl bg-slate-50 overflow-hidden">
-                        <!-- Cabecera del Estudiante (Clickeable para desplegar) -->
                         <div onclick="toggleStudentExpand('${st.email}')" class="p-3.5 bg-white hover:bg-slate-50 cursor-pointer flex justify-between items-center border-b border-slate-100">
                           <div class="flex items-center space-x-3">
                             <span class="text-emerald-600 font-bold text-xs">${isExpanded ? '▼' : '▶'}</span>
@@ -709,7 +690,6 @@
                           </div>
                         </div>
 
-                        <!-- Panel Desplegable con los Módulos y sus 3 calificaciones ponderadas -->
                         ${isExpanded || !isAdmin ? `
                           <div class="p-4 space-y-4 bg-slate-50/70">
                             ${state.tasks.length === 0 ? '<p class="text-center text-xs text-slate-400 py-3">No hay módulos de evaluación configurados todavía.</p>' : `
@@ -795,36 +775,6 @@
               `}
             </div>
           </div>
-        `;
-      }
-
-      if (state.activeTab === 'fototeca') {
-        return `
-          <form onsubmit="addPhoto(event)" class="bg-white border rounded-xl p-4 shadow-sm mb-6 space-y-2">
-            <h4 class="font-bold text-slate-800 text-xs">Compartir nueva foto</h4>
-            <div class="grid gap-2 sm:grid-cols-2">
-              <input type="text" id="photoTitle" placeholder="Título" class="p-2 border rounded text-xs bg-white">
-              <input type="text" id="photoUrl" placeholder="URL de imagen" class="p-2 border rounded text-xs bg-white">
-            </div>
-            <div class="flex justify-end">
-              <button type="submit" class="px-3 py-1.5 bg-emerald-600 text-white rounded text-xs font-semibold">Subir Foto</button>
-            </div>
-          </form>
-          ${state.photos.length === 0 ? '<p class="text-center text-xs text-slate-400 py-8 bg-white rounded-xl border border-slate-200">No hay fotos todavía.</p>' : `
-            <div class="grid gap-4 sm:grid-cols-2">
-              ${state.photos.map(p => `
-                <div class="border rounded-xl overflow-hidden bg-slate-50 shadow-sm">
-                  <div class="h-36 bg-slate-200">
-                    <img src="${p.url}" alt="${p.title}" class="w-full h-full object-cover">
-                  </div>
-                  <div class="p-3">
-                    <h5 class="font-bold text-slate-800 text-xs mb-0.5">${p.title}</h5>
-                    <p class="text-[10px] text-slate-500">Subido por: ${p.author}</p>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          `}
         `;
       }
     }
