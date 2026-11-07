@@ -23,7 +23,7 @@
       user: null,
       activeTab: 'muro',
       menuOpen: false,
-      expandedStudentEmail: null, // Controla qué estudiante está desplegado
+      expandedStudentEmail: null,
       whitelist: [],
       posts: [],
       modules: [],
@@ -238,9 +238,7 @@
       }
     }
 
-    // Actualizar calificaciones detalladas por módulo
     async function updateDetailedGrade(taskId, studentEmail, type, val) {
-      // Buscamos la tarea/módulo
       const task = state.tasks.find(t => t.id === taskId);
       if (!task) return;
 
@@ -250,7 +248,6 @@
       }
 
       if (typeof gradesObj[studentEmail] !== 'object') {
-        // Compatibilidad si venía como número simple antes
         let oldVal = gradesObj[studentEmail];
         gradesObj[studentEmail] = { asistencia: oldVal, clase: oldVal, practico: oldVal };
       }
@@ -617,7 +614,7 @@
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <h3 class="text-sm font-bold text-slate-900 mb-1">Módulos de Evaluación Registrados (Hasta 13)</h3>
-              <p class="text-[11px] text-slate-500 mb-4">Cada módulo registrado genera las columnas de Asistencia, Trabajo en clase y Trabajo Práctico para la evaluación de los estudiantes.</p>
+              <p class="text-[11px] text-slate-500 mb-4">Cada módulo registrado activa las casillas ponderadas: Asistencia (10%), Trabajo en clase (20%) y Trabajo Práctico (70%).</p>
               ${state.tasks.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay módulos registrados todavía.</p>' : `
                 <div class="space-y-4">
                   ${state.tasks.map(t => `
@@ -648,7 +645,7 @@
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
               <div>
                 <h3 class="text-sm font-bold text-slate-900">Registro General de Calificaciones por Módulos</h3>
-                <p class="text-[11px] text-slate-500">Nota mínima de aprobación: <b class="text-emerald-700">90%</b> (Cursos Especializados)[span_0](start_span)[span_0](end_span). ${isAdmin ? 'Toca sobre el nombre de un estudiante para desplegar sus notas por módulo.' : ''}</p>
+                <p class="text-[11px] text-slate-500">Ponderación: Asistencia (10%), Clase (20%), Práctico (70%). Nota mínima: <b class="text-emerald-700">90%</b>[span_0](start_span)[span_0](end_span).</p>
               </div>
               ${isAdmin ? `
                 <button onclick="exportPDF()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold shadow flex items-center space-x-2">
@@ -661,7 +658,7 @@
             <div id="pdfTableContainer" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
               <div class="text-center pb-2 border-b">
                 <h2 class="font-bold text-sm text-slate-800 uppercase">Capacitaciones ALR - Registro Detallado de Calificaciones</h2>
-                <p class="text-[10px] text-slate-500">Evaluación por Módulos y Especialización Profesional</p>
+                <p class="text-[10px] text-slate-500">Evaluación Ponderada por Módulos (Práctico 70%, Clase 20%, Asistencia 10%)</p>
               </div>
 
               ${studentsList.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay estudiantes registrados.</p>' : `
@@ -674,14 +671,19 @@
 
                     const isExpanded = state.expandedStudentEmail === st.email;
 
-                    // Calcular promedio general del estudiante a partir de sus módulos
+                    // Cálculo del promedio ponderado general basado en las notas de cada módulo
                     let totalSum = 0;
                     let countMods = state.tasks.length > 0 ? state.tasks.length : 1;
 
                     state.tasks.forEach(t => {
                       const g = (t.grades && t.grades[st.email]) ? t.grades[st.email] : { asistencia: 100, clase: 100, practico: 100 };
-                      const modAvg = (Number(g.asistencia) + Number(g.clase) + Number(g.practico)) / 3;
-                      totalSum += modAvg;
+                      const asis = Number(g.asistencia) || 0;
+                      const clas = Number(g.clase) || 0;
+                      const prac = Number(g.practico) || 0;
+                      
+                      // Aplicando la ponderación oficial: Práctico 70%, Clase 20%, Asistencia 10%
+                      const modPonderado = (asis * 0.10) + (clas * 0.20) + (prac * 0.70);
+                      totalSum += modPonderado;
                     });
 
                     const finalAverage = Math.round(totalSum / countMods);
@@ -694,8 +696,8 @@
                           <div class="flex items-center space-x-3">
                             <span class="text-emerald-600 font-bold text-xs">${isExpanded ? '▼' : '▶'}</span>
                             <div>
-                              <h4 class="font-bold text-slate-900 text-xs">${displayName} ${isAdmin ? '<span class="text-[10px] text-emerald-600 font-normal">(Toca para gestionar notas)</span>' : ''}</h4>
-                              <p class="text-[10px] text-slate-400">Promedio General: <b class="text-slate-700">${finalAverage} pts</b></p>
+                              <h4 class="font-bold text-slate-900 text-xs">${displayName} ${isAdmin ? '<span class="text-[10px] text-emerald-600 font-normal">(Toca para gestionar notas del módulo)</span>' : ''}</h4>
+                              <p class="text-[10px] text-slate-400">Promedio Ponderado Final: <b class="text-slate-700">${finalAverage} pts</b></p>
                             </div>
                           </div>
                           <div>
@@ -705,34 +707,39 @@
                           </div>
                         </div>
 
-                        <!-- Panel Desplegable con los Módulos y sus 3 calificaciones -->
+                        <!-- Panel Desplegable con los Módulos y sus 3 calificaciones ponderadas -->
                         ${isExpanded || !isAdmin ? `
                           <div class="p-4 space-y-4 bg-slate-50/70">
                             ${state.tasks.length === 0 ? '<p class="text-center text-xs text-slate-400 py-3">No hay módulos de evaluación configurados todavía.</p>' : `
                               <div class="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
                                 ${state.tasks.map(t => {
                                   const grades = (t.grades && t.grades[st.email]) ? t.grades[st.email] : { asistencia: 100, clase: 100, practico: 100 };
+                                  const asis = Number(grades.asistencia) || 0;
+                                  const clas = Number(grades.clase) || 0;
+                                  const prac = Number(grades.practico) || 0;
+                                  const subTotal = Math.round((asis * 0.10) + (clas * 0.20) + (prac * 0.70));
+
                                   return `
                                     <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-xs space-y-2">
                                       <div class="border-b pb-1.5 flex justify-between items-center">
                                         <h5 class="font-bold text-slate-800 text-xs">${t.title}</h5>
-                                        <span class="text-[9px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-semibold">${t.due_date}</span>
+                                        <span class="text-[9px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-semibold">Subtotal: ${subTotal} pts</span>
                                       </div>
                                       <div class="grid grid-cols-3 gap-1 text-center text-[10px]">
                                         <div>
-                                          <label class="block text-slate-500 text-[9px] mb-0.5 font-semibold">Asistencia</label>
+                                          <label class="block text-slate-500 text-[9px] mb-0.5 font-semibold">Asis. (10%)</label>
                                           ${isAdmin ? `
                                             <input type="number" min="0" max="100" value="${grades.asistencia}" onchange="updateDetailedGrade(${t.id}, '${st.email}', 'asistencia', this.value)" class="w-full p-1 border rounded text-center text-xs font-bold text-emerald-700 bg-slate-50">
                                           ` : `<span class="font-bold text-slate-700">${grades.asistencia}</span>`}
                                         </div>
                                         <div>
-                                          <label class="block text-slate-500 text-[9px] mb-0.5 font-semibold">Trabajo Clase</label>
+                                          <label class="block text-slate-500 text-[9px] mb-0.5 font-semibold">Clase (20%)</label>
                                           ${isAdmin ? `
-                                            <input type="number" min="0" max="100" value="${grades.clase}" onchange="updateDetailedGrade(${t.id}, '${st.email}', 'clase', this.value)" class="w-full p-1 border rounded text-center text-xs font-bold text-emerald-700 bg-slate-50">
+                                            <input type="number" min="0" max="100" value="${grades.clase}" onchange="updateDetailedGrade(${t.id}, '${st.email}', 'clase', this.value)" class="w-full p-1 border rounded text-xs font-bold text-emerald-700 bg-slate-50">
                                           ` : `<span class="font-bold text-slate-700">${grades.clase}</span>`}
                                         </div>
                                         <div>
-                                          <label class="block text-slate-500 text-[9px] mb-0.5 font-semibold">Práctico</label>
+                                          <label class="block text-slate-500 text-[9px] mb-0.5 font-semibold">Práct. (70%)</label>
                                           ${isAdmin ? `
                                             <input type="number" min="0" max="100" value="${grades.practico}" onchange="updateDetailedGrade(${t.id}, '${st.email}', 'practico', this.value)" class="w-full p-1 border rounded text-xs font-bold text-emerald-700 bg-slate-50">
                                           ` : `<span class="font-bold text-slate-700">${grades.practico}</span>`}
