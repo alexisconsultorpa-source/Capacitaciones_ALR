@@ -23,6 +23,7 @@
       user: null,
       activeTab: 'muro',
       menuOpen: false,
+      expandedStudentEmail: null, // Controla qué estudiante está desplegado
       whitelist: [],
       posts: [],
       modules: [],
@@ -119,6 +120,15 @@
           render();
         }
       }
+    }
+
+    function toggleStudentExpand(email) {
+      if (state.expandedStudentEmail === email) {
+        state.expandedStudentEmail = null;
+      } else {
+        state.expandedStudentEmail = email;
+      }
+      render();
     }
 
     async function addStudent(event) {
@@ -218,23 +228,34 @@
       if (!title || !dueDate || !url) return alert('Completa los campos obligatorios.');
 
       const { error } = await _supabase.from('tasks').insert([{ title, due_date: dueDate, "desc": desc, url, grades: {} }]);
-      if (!error) { alert('¡Actividad o Módulo de Evaluación cargado en la nube!'); loadData(); }
+      if (!error) { alert('¡Módulo de evaluación registrado con éxito!'); loadData(); }
     }
 
     async function deleteTask(id) {
-      if (confirm('¿Eliminar actividad?')) {
+      if (confirm('¿Eliminar módulo de evaluación?')) {
         const { error } = await _supabase.from('tasks').delete().eq('id', id);
         if (!error) loadData();
       }
     }
 
-    async function updateGradeAdmin(taskId, studentEmail, val, currentGrades) {
-      let gradesObj = currentGrades || {};
-      if (val === '') {
-        delete gradesObj[studentEmail];
-      } else {
-        gradesObj[studentEmail] = Number(val);
+    // Actualizar calificaciones detalladas por módulo
+    async function updateDetailedGrade(taskId, studentEmail, type, val) {
+      // Buscamos la tarea/módulo
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      let gradesObj = task.grades || {};
+      if (!gradesObj[studentEmail]) {
+        gradesObj[studentEmail] = { asistencia: 100, clase: 100, practico: 100 };
       }
+
+      if (typeof gradesObj[studentEmail] !== 'object') {
+        // Compatibilidad si venía como número simple antes
+        let oldVal = gradesObj[studentEmail];
+        gradesObj[studentEmail] = { asistencia: oldVal, clase: oldVal, practico: oldVal };
+      }
+
+      gradesObj[studentEmail][type] = val === '' ? 0 : Number(val);
 
       const { error } = await _supabase.from('tasks').update({ grades: gradesObj }).eq('id', taskId);
       if (!error) loadData();
@@ -243,8 +264,8 @@
     function exportPDF() {
       const element = document.getElementById('pdfTableContainer');
       const opt = {
-        margin:       0.5,
-        filename:     'Registro_Calificaciones_ALR.pdf',
+        margin:       0.4,
+        filename:     'Registro_Calificaciones_Detallado_ALR.pdf',
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true },
         jsPDF:        { unit: 'in', format: 'letter', orientation: 'landscape' }
@@ -374,8 +395,8 @@
               <button onclick="setTab('muro')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'muro' ? 'text-emerald-700 bg-emerald-50' : ''}">💬 Muro Social</button>
               <button onclick="setTab('modulos')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'modulos' ? 'text-emerald-700 bg-emerald-50' : ''}">📚 Módulos y PDFs</button>
               <button onclick="setTab('ppt')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'ppt' ? 'text-red-700 bg-red-50' : ''}">📊 Clase PPT</button>
-              <button onclick="setTab('tareas')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'tareas' ? 'text-emerald-700 bg-emerald-50' : ''}">📝 Módulos Evaluativos (Máx 13)</button>
-              <button onclick="setTab('calificaciones')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'calificaciones' ? 'text-emerald-700 bg-emerald-50' : ''}">🏆 Registro de Calificaciones (PDF)</button>
+              <button onclick="setTab('tareas')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'tareas' ? 'text-emerald-700 bg-emerald-50' : ''}">📝 Módulos de Evaluación (Máx 13)</button>
+              <button onclick="setTab('calificaciones')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'calificaciones' ? 'text-emerald-700 bg-emerald-50' : ''}">🏆 Registro Detallado (PDF)</button>
               <button onclick="setTab('preguntas')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'preguntas' ? 'text-emerald-700 bg-emerald-50' : ''}">❓ Preguntas</button>
               <button onclick="setTab('fototeca')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'fototeca' ? 'text-emerald-700 bg-emerald-50' : ''}">📷 Fototeca</button>
               
@@ -596,7 +617,7 @@
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <h3 class="text-sm font-bold text-slate-900 mb-1">Módulos de Evaluación Registrados (Hasta 13)</h3>
-              <p class="text-[11px] text-slate-500 mb-4">Cada módulo evaluativo genera automáticamente las columnas de Asistencia, Trabajo en clase y Trabajo Práctico en la tabla general.</p>
+              <p class="text-[11px] text-slate-500 mb-4">Cada módulo registrado genera las columnas de Asistencia, Trabajo en clase y Trabajo Práctico para la evaluación de los estudiantes.</p>
               ${state.tasks.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay módulos registrados todavía.</p>' : `
                 <div class="space-y-4">
                   ${state.tasks.map(t => `
@@ -619,105 +640,114 @@
 
       if (state.activeTab === 'calificaciones') {
         const studentsList = state.whitelist.filter(u => u.role === 'student');
-        
+        const isAdmin = state.user.role === 'admin';
+
         return `
           <div class="space-y-4">
             <!-- Barra de Herramientas Superior -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
               <div>
-                <h3 class="text-sm font-bold text-slate-900">Registro General de Calificaciones</h3>
-                <p class="text-[11px] text-slate-500">Nota mínima de aprobación: <b class="text-emerald-700">90%</b> (Cursos Especializados)[span_0](start_span)[span_0](end_span).</p>
+                <h3 class="text-sm font-bold text-slate-900">Registro General de Calificaciones por Módulos</h3>
+                <p class="text-[11px] text-slate-500">Nota mínima de aprobación: <b class="text-emerald-700">90%</b> (Cursos Especializados)[span_0](start_span)[span_0](end_span). ${isAdmin ? 'Toca sobre el nombre de un estudiante para desplegar sus notas por módulo.' : ''}</p>
               </div>
-              ${state.user.role === 'admin' ? `
+              ${isAdmin ? `
                 <button onclick="exportPDF()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold shadow flex items-center space-x-2">
-                  <span>📥 Descargar Registro en PDF</span>
+                  <span>📥 Descargar Registro Detallado en PDF</span>
                 </button>
               ` : ''}
             </div>
 
-            <!-- Contenedor PDF que abarca la tabla exacta -->
+            <!-- Contenedor PDF con el esquema detallado -->
             <div id="pdfTableContainer" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
               <div class="text-center pb-2 border-b">
-                <h2 class="font-bold text-sm text-slate-800 uppercase">Capacitaciones ALR - Control de Notas por Módulos</h2>
-                <p class="text-[10px] text-slate-500">Evaluación de Especialización Profesional</p>
+                <h2 class="font-bold text-sm text-slate-800 uppercase">Capacitaciones ALR - Registro Detallado de Calificaciones</h2>
+                <p class="text-[10px] text-slate-500">Evaluación por Módulos y Especialización Profesional</p>
               </div>
 
               ${studentsList.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay estudiantes registrados.</p>' : `
-                <div class="overflow-x-auto">
-                  <table class="w-full text-left text-xs text-slate-700 border-collapse border border-slate-300">
-                    <thead class="bg-slate-100 text-slate-800 uppercase text-[9px] text-center">
-                      <tr>
-                        <th rowspan="2" class="py-2 px-2 border border-slate-300 align-middle">Nombre del Estudiante</th>
-                        ${state.tasks.map(t => `
-                          <th colspan="3" class="py-1 px-1 border border-slate-300 bg-emerald-50">${t.title}</th>
-                        `).join('')}
-                        <th rowspan="2" class="py-2 px-2 border border-slate-300 align-middle bg-slate-200">Promedio Final</th>
-                        <th rowspan="2" class="py-2 px-2 border border-slate-300 align-middle bg-slate-200">Estado (Mín. 90)</th>
-                      </tr>
-                      <tr>
-                        ${state.tasks.map(() => `
-                          <th class="py-1 px-1 border border-slate-300 text-[8px]">Asistencia</th>
-                          <th class="py-1 px-1 border border-slate-300 text-[8px]">Clase</th>
-                          <th class="py-1 px-1 border border-slate-300 text-[8px]">Práctico</th>
-                        `).join('')}
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-200 text-center">
-                      ${studentsList.map((st, idx) => {
-                        const isAdmin = state.user.role === 'admin';
-                        const isMe = st.email === state.user.email;
+                <div class="space-y-3">
+                  ${studentsList.map((st, idx) => {
+                    const isMe = st.email === state.user.email;
+                    let displayName = st.name;
+                    if (!isAdmin && !isMe) displayName = `Estudiante ${idx + 1}`;
+                    if (!isAdmin && isMe) displayName = `${st.name} (Tú)`;
 
-                        // Privacidad: Si no es admin y no es su propio usuario, ve "Estudiante X"
-                        let displayStudentName = st.name;
-                        if (!isAdmin && !isMe) {
-                          displayStudentName = `Estudiante ${idx + 1}`;
-                        } else if (!isAdmin && isMe) {
-                          displayStudentName = `${st.name} (Tú)`;
-                        }
+                    const isExpanded = state.expandedStudentEmail === st.email;
 
-                        // Cálculo de promedios basado en notas de módulos
-                        let sumGrades = 0;
-                        let totalModules = state.tasks.length > 0 ? state.tasks.length : 1;
+                    // Calcular promedio general del estudiante a partir de sus módulos
+                    let totalSum = 0;
+                    let countMods = state.tasks.length > 0 ? state.tasks.length : 1;
 
-                        state.tasks.forEach(t => {
-                          const grades = t.grades || {};
-                          const val = grades[st.email] !== undefined && grades[st.email] !== null ? Number(grades[st.email]) : 0;
-                          sumGrades += val;
-                        });
+                    state.tasks.forEach(t => {
+                      const g = (t.grades && t.grades[st.email]) ? t.grades[st.email] : { asistencia: 100, clase: 100, practico: 100 };
+                      const modAvg = (Number(g.asistencia) + Number(g.clase) + Number(g.practico)) / 3;
+                      totalSum += modAvg;
+                    });
 
-                        const average = Math.round(sumGrades / totalModules);
-                        const isApproved = average >= 90;
+                    const finalAverage = Math.round(totalSum / countMods);
+                    const isApproved = finalAverage >= 90;
 
-                        return `
-                          <tr class="${isMe && !isAdmin ? 'bg-emerald-50 font-semibold' : ''}">
-                            <td class="py-2 px-3 border border-slate-300 font-bold text-left text-slate-900">${displayStudentName}</td>
-                            
-                            ${state.tasks.map(t => {
-                              const grades = t.grades || {};
-                              const gradeVal = grades[st.email] !== undefined && grades[st.email] !== null ? grades[st.email] : '-';
-                              
-                              return `
-                                <td class="py-1 px-1 border border-slate-300">100</td>
-                                <td class="py-1 px-1 border border-slate-300">100</td>
-                                <td class="py-1 px-1 border border-slate-300">
-                                  ${isAdmin ? `
-                                    <input type="number" min="0" max="100" value="${gradeVal === '-' ? '' : gradeVal}" onchange="updateGradeAdmin(${t.id}, '${st.email}', this.value, ${JSON.stringify(grades).replace(/"/g, '&quot;')})" class="w-12 p-0.5 border rounded text-center text-xs bg-white font-bold text-emerald-600" placeholder="-">
-                                  ` : `<span class="font-bold text-emerald-600">${gradeVal}</span>`}
-                                </td>
-                              `;
-                            }).join('')}
+                    return `
+                      <div class="border border-slate-200 rounded-xl bg-slate-50 overflow-hidden">
+                        <!-- Cabecera del Estudiante (Clickeable para desplegar) -->
+                        <div onclick="toggleStudentExpand('${st.email}')" class="p-3.5 bg-white hover:bg-slate-50 cursor-pointer flex justify-between items-center border-b border-slate-100">
+                          <div class="flex items-center space-x-3">
+                            <span class="text-emerald-600 font-bold text-xs">${isExpanded ? '▼' : '▶'}</span>
+                            <div>
+                              <h4 class="font-bold text-slate-900 text-xs">${displayName} ${isAdmin ? '<span class="text-[10px] text-emerald-600 font-normal">(Toca para gestionar notas)</span>' : ''}</h4>
+                              <p class="text-[10px] text-slate-400">Promedio General: <b class="text-slate-700">${finalAverage} pts</b></p>
+                            </div>
+                          </div>
+                          <div>
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${isApproved ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
+                              ${isApproved ? 'APROBADO (≥90)' : 'REPROBADO (<90)'}
+                            </span>
+                          </div>
+                        </div>
 
-                            <td class="py-2 px-2 border border-slate-300 font-bold bg-slate-50">${average} pts</td>
-                            <td class="py-2 px-2 border border-slate-300 bg-slate-50">
-                              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${isApproved ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
-                                ${isApproved ? 'APROBADO' : 'REPROBADO'}
-                              </span>
-                            </td>
-                          </tr>
-                        `;
-                      }).join('')}
-                    </tbody>
-                  </table>
+                        <!-- Panel Desplegable con los Módulos y sus 3 calificaciones -->
+                        ${isExpanded || !isAdmin ? `
+                          <div class="p-4 space-y-4 bg-slate-50/70">
+                            ${state.tasks.length === 0 ? '<p class="text-center text-xs text-slate-400 py-3">No hay módulos de evaluación configurados todavía.</p>' : `
+                              <div class="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+                                ${state.tasks.map(t => {
+                                  const grades = (t.grades && t.grades[st.email]) ? t.grades[st.email] : { asistencia: 100, clase: 100, practico: 100 };
+                                  return `
+                                    <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-xs space-y-2">
+                                      <div class="border-b pb-1.5 flex justify-between items-center">
+                                        <h5 class="font-bold text-slate-800 text-xs">${t.title}</h5>
+                                        <span class="text-[9px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded font-semibold">${t.due_date}</span>
+                                      </div>
+                                      <div class="grid grid-cols-3 gap-1 text-center text-[10px]">
+                                        <div>
+                                          <label class="block text-slate-500 text-[9px] mb-0.5 font-semibold">Asistencia</label>
+                                          ${isAdmin ? `
+                                            <input type="number" min="0" max="100" value="${grades.asistencia}" onchange="updateDetailedGrade(${t.id}, '${st.email}', 'asistencia', this.value)" class="w-full p-1 border rounded text-center text-xs font-bold text-emerald-700 bg-slate-50">
+                                          ` : `<span class="font-bold text-slate-700">${grades.asistencia}</span>`}
+                                        </div>
+                                        <div>
+                                          <label class="block text-slate-500 text-[9px] mb-0.5 font-semibold">Trabajo Clase</label>
+                                          ${isAdmin ? `
+                                            <input type="number" min="0" max="100" value="${grades.clase}" onchange="updateDetailedGrade(${t.id}, '${st.email}', 'clase', this.value)" class="w-full p-1 border rounded text-center text-xs font-bold text-emerald-700 bg-slate-50">
+                                          ` : `<span class="font-bold text-slate-700">${grades.clase}</span>`}
+                                        </div>
+                                        <div>
+                                          <label class="block text-slate-500 text-[9px] mb-0.5 font-semibold">Práctico</label>
+                                          ${isAdmin ? `
+                                            <input type="number" min="0" max="100" value="${grades.practico}" onchange="updateDetailedGrade(${t.id}, '${st.email}', 'practico', this.value)" class="w-full p-1 border rounded text-xs font-bold text-emerald-700 bg-slate-50">
+                                          ` : `<span class="font-bold text-slate-700">${grades.practico}</span>`}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  `;
+                                }).join('')}
+                              </div>
+                            `}
+                          </div>
+                        ` : ''}
+                      </div>
+                    `;
+                  }).join('')}
                 </div>
               `}
             </div>
