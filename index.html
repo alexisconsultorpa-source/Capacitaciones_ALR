@@ -271,6 +271,20 @@
       html2pdf().from(element).set(opt).save();
     }
 
+    function exportCertificatePDF() {
+      const element = document.getElementById('certificateContainer');
+      const studentNameInput = document.getElementById('certStudentName');
+      const studentName = studentNameInput ? studentNameInput.value : 'Estudiante';
+      const opt = {
+        margin:       0.2,
+        filename:     `Certificado_${studentName.replace(/\s+/g, '_')}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'landscape' }
+      };
+      html2pdf().from(element).set(opt).save();
+    }
+
     async function addQuestion(event) {
       event.preventDefault();
       const text = document.getElementById('newQText').value.trim();
@@ -387,7 +401,8 @@
               <button onclick="setTab('preguntas')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'preguntas' ? 'text-emerald-700 bg-emerald-50' : ''}">❓ Preguntas</button>
               
               ${state.user.role === 'admin' ? `
-                <button onclick="setTab('estudiantes')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 border-t border-slate-100 ${state.activeTab === 'estudiantes' ? 'text-emerald-700 bg-emerald-50' : ''}">👥 Gestión de Grupo</button>
+                <button onclick="setTab('certificados')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 border-t border-slate-100 ${state.activeTab === 'certificados' ? 'text-emerald-700 bg-emerald-50' : ''}">📜 Generador de Certificados</button>
+                <button onclick="setTab('estudiantes')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'estudiantes' ? 'text-emerald-700 bg-emerald-50' : ''}">👥 Gestión de Grupo</button>
               ` : ''}
 
               <div class="border-t border-slate-100 mt-1 pt-1 sm:hidden">
@@ -457,6 +472,110 @@
                   </table>
                 </div>
               `}
+            </div>
+          </div>
+        `;
+      }
+
+      if (state.activeTab === 'certificados' && state.user.role === 'admin') {
+        const studentsList = state.whitelist.filter(u => u.role === 'student');
+        return `
+          <div class="space-y-6">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+              <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-sm font-bold text-slate-900 uppercase">📜 Generador Oficial de Certificados</h3>
+                <button onclick="exportCertificatePDF()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold shadow flex items-center space-x-2">
+                  <span>📥 Descargar Certificado en PDF</span>
+                </button>
+              </div>
+
+              <!-- Formulario de configuración -->
+              <div class="grid gap-4 sm:grid-cols-2 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Seleccionar o Escribir Estudiante</label>
+                  <select id="certStudentName" onchange="document.getElementById('displayStudentName').innerText = this.value || '[Nombre del Estudiante]'" class="w-full p-2 border rounded bg-white font-semibold">
+                    <option value="">-- Seleccionar estudiante registrado --</option>
+                    ${studentsList.map(st => `<option value="${st.name}">${st.name}</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Descripción del Curso / Capacitación</label>
+                  <input type="text" id="certCourseDesc" value="Programa de Formación y Auditoría en Servicio" oninput="document.getElementById('displayCourseDesc').innerText = this.value" class="w-full p-2 border rounded bg-white">
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Fecha de Emisión</label>
+                  <input type="text" id="certDate" value="Panamá, 7 de Noviembre de 2026" oninput="document.getElementById('displayDate').innerText = this.value" class="w-full p-2 border rounded bg-white">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1">Firma 1 (Nombre)</label>
+                    <input type="text" id="sig1Name" value="Alexis León Rivera" oninput="document.getElementById('displaySig1Name').innerText = this.value" class="w-full p-2 border rounded bg-white">
+                  </div>
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1">Firma 1 (Cargo)</label>
+                    <input type="text" id="sig1Title" value="Director General ALR" oninput="document.getElementById('displaySig1Title').innerText = this.value" class="w-full p-2 border rounded bg-white">
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 sm:col-span-2">
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1">Firma 2 (Nombre)</label>
+                    <input type="text" id="sig2Name" value="Especialista en Capacitación" oninput="document.getElementById('displaySig2Name').innerText = this.value" class="w-full p-2 border rounded bg-white">
+                  </div>
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1">Firma 2 (Cargo)</label>
+                    <input type="text" id="sig2Title" value="Coordinador Académico" oninput="document.getElementById('displaySig2Title').innerText = this.value" class="w-full p-2 border rounded bg-white">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Vista Previa del Certificado (Diseño Formal Paisaje) -->
+              <div class="overflow-x-auto p-4 bg-slate-200 rounded-xl flex justify-center">
+                <div id="certificateContainer" style="width: 1050px; min-height: 700px; background: #ffffff; border: 12px solid #0f172a; padding: 50px; text-align: center; position: relative; font-family: sans-serif; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+                  <!-- Escudo o Logo Superior -->
+                  <div style="margin-bottom: 20px;">
+                    <span style="font-size: 36px;">🛡️</span>
+                    <h2 style="font-size: 20px; font-weight: bold; color: #0f172a; letter-spacing: 2px; margin-top: 5px;">CAPACITACIONES ALR</h2>
+                    <p style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">Excelencia, Liderazgo y Auditoría Profesional</p>
+                  </div>
+
+                  <div style="margin: 40px 0;">
+                    <h1 style="font-size: 32px; font-weight: bold; color: #0f172a; letter-spacing: 4px; margin-bottom: 10px;">CERTIFICADO DE APROBACIÓN</h1>
+                    <p style="font-size: 14px; color: #475569; font-style: italic;">Se otorga el presente reconocimiento a:</p>
+                  </div>
+
+                  <div style="margin: 30px 0;">
+                    <h2 id="displayStudentName" style="font-size: 34px; font-weight: bold; color: #047857; border-bottom: 2px solid #cbd5e1; display: inline-block; padding-bottom: 5px; min-width: 500px;">[Nombre del Estudiante]</h2>
+                  </div>
+
+                  <div style="margin: 30px auto; max-width: 800px;">
+                    <p style="font-size: 15px; color: #334155; line-height: 1.6;">
+                      Por haber completado satisfactoriamente y superado con excelencia los estándares de evaluación del programa académico:
+                    </p>
+                    <p id="displayCourseDesc" style="font-size: 18px; font-weight: bold; color: #0f172a; margin-top: 10px;">Programa de Formación y Auditoría en Servicio</p>
+                  </div>
+
+                  <div style="margin-top: 30px; font-size: 13px; color: #64748b;">
+                    <p id="displayDate">Panamá, 7 de Noviembre de 2026</p>
+                  </div>
+
+                  <!-- Bloque de Firmas -->
+                  <div style="display: flex; justify-content: space-around; margin-top: 70px; padding: 0 50px;">
+                    <div style="text-align: center; width: 280px;">
+                      <div style="border-bottom: 1.5px solid #0f172a; margin-bottom: 8px; padding-bottom: 5px;">
+                        <span id="displaySig1Name" style="font-weight: bold; font-size: 13px; color: #0f172a; display: block;">Alexis León Rivera</span>
+                      </div>
+                      <span id="displaySig1Title" style="font-size: 11px; color: #475569; text-transform: uppercase;">Director General ALR</span>
+                    </div>
+
+                    <div style="text-align: center; width: 280px;">
+                      <div style="border-bottom: 1.5px solid #0f172a; margin-bottom: 8px; padding-bottom: 5px;">
+                        <span id="displaySig2Name" style="font-weight: bold; font-size: 13px; color: #0f172a; display: block;">Especialista en Capacitación</span>
+                      </div>
+                      <span id="displaySig2Title" style="font-size: 11px; color: #475569; text-transform: uppercase;">Coordinador Académico</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         `;
