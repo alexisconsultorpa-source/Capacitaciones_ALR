@@ -228,10 +228,11 @@
       const title = document.getElementById('taskTitle').value.trim();
       const dueDate = document.getElementById('taskDueDate').value.trim();
       const desc = document.getElementById('taskDesc').value.trim();
-      const url = document.getElementById('taskUrl').value.trim();
-      if (!title || !dueDate || !url) return alert('Completa los campos obligatorios.');
+      // Sin requerir enlace obligatorio
+      const url = document.getElementById('taskUrl') ? document.getElementById('taskUrl').value.trim() : '';
+      if (!title || !dueDate) return alert('Completa los campos obligatorios.');
 
-      const { error } = await _supabase.from('tasks').insert([{ title, due_date: dueDate, "desc": desc, url, grades: {} }]);
+      const { error } = await _supabase.from('tasks').insert([{ title, due_date: dueDate, "desc": desc, url: url || '#', grades: {} }]);
       if (!error) { alert('¡Módulo de evaluación registrado con éxito!'); loadData(); }
     }
 
@@ -422,7 +423,12 @@
               <button onclick="setTab('muro')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'muro' ? 'text-emerald-700 bg-emerald-50' : ''}">💬 Muro Social</button>
               <button onclick="setTab('modulos')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'modulos' ? 'text-emerald-700 bg-emerald-50' : ''}">📚 Módulos y PDFs</button>
               <button onclick="setTab('ppt')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'ppt' ? 'text-red-700 bg-red-50' : ''}">📊 Clase PPT</button>
-              <button onclick="setTab('tareas')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'tareas' ? 'text-emerald-700 bg-emerald-50' : ''}">📝 Módulos de Evaluación (Máx 13)</button>
+              
+              <!-- Menú de módulos de prueba/evaluación visible exclusivamente para admin -->
+              ${state.user.role === 'admin' ? `
+                <button onclick="setTab('tareas')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'tareas' ? 'text-emerald-700 bg-emerald-50' : ''}">📝 Módulos de Evaluación</button>
+              ` : ''}
+
               <button onclick="setTab('calificaciones')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'calificaciones' ? 'text-emerald-700 bg-emerald-50' : ''}">🏆 Registro Detallado (PDF)</button>
               <button onclick="setTab('preguntas')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'preguntas' ? 'text-emerald-700 bg-emerald-50' : ''}">❓ Preguntas</button>
               
@@ -751,40 +757,36 @@
         `;
       }
 
-      if (state.activeTab === 'tareas') {
+      if (state.activeTab === 'tareas' && state.user.role === 'admin') {
         return `
           <div class="space-y-6">
-            ${state.user.role === 'admin' ? `
-              <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 shadow-sm">
-                <h3 class="text-xs font-bold text-blue-900 uppercase mb-3">➕ Registrar Módulo de Evaluación (Máximo 13)</h3>
-                <form onsubmit="addTask(event)" class="space-y-3">
-                  <div class="grid gap-3 sm:grid-cols-2">
-                    <input type="text" id="taskTitle" required placeholder="Título (ej. Módulo 1, Módulo 2)" class="p-2 border rounded text-xs bg-white">
-                    <input type="text" id="taskDueDate" required placeholder="Semana o periodo" class="p-2 border rounded text-xs bg-white">
-                  </div>
-                  <textarea id="taskDesc" rows="2" placeholder="Descripción..." class="w-full p-2 border rounded text-xs bg-white resize-none"></textarea>
-                  <input type="text" id="taskUrl" required placeholder="Enlace de referencia" class="w-full p-2 border rounded text-xs bg-white">
-                  <div class="flex justify-end">
-                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold shadow">Registrar Módulo</button>
-                  </div>
-                </form>
-              </div>
-            ` : ''}
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 shadow-sm">
+              <h3 class="text-xs font-bold text-blue-900 uppercase mb-3">➕ Registrar Módulo de Evaluación (Sin Límite)</h3>
+              <form onsubmit="addTask(event)" class="space-y-3">
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <input type="text" id="taskTitle" required placeholder="Título (ej. Módulo 1, Módulo 2)" class="p-2 border rounded text-xs bg-white">
+                  <input type="text" id="taskDueDate" required placeholder="Semana o periodo" class="p-2 border rounded text-xs bg-white">
+                </div>
+                <textarea id="taskDesc" rows="2" placeholder="Descripción..." class="w-full p-2 border rounded text-xs bg-white resize-none"></textarea>
+                <div class="flex justify-end">
+                  <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold shadow">Registrar Módulo de Evaluación</button>
+                </div>
+              </form>
+            </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <h3 class="text-sm font-bold text-slate-900 mb-1">Módulos de Evaluación Registrados (Hasta 13)</h3>
+              <h3 class="text-sm font-bold text-slate-900 mb-1">Módulos de Evaluación Registrados (Ilimitados)</h3>
               <p class="text-[11px] text-slate-500 mb-4">Cada módulo registrado activa las casillas ponderadas: Asistencia (10%), Trabajo en clase (20%) y Trabajo Práctico (70%).</p>
               ${state.tasks.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay módulos registrados todavía.</p>' : `
                 <div class="space-y-4">
                   ${state.tasks.map(t => `
                     <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 flex justify-between items-center relative">
-                      ${state.user.role === 'admin' ? `<button onclick="deleteTask(${t.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs">🗑️</button>` : ''}
+                      <button onclick="deleteTask(${t.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs">🗑️</button>
                       <div>
                         <span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">📅 ${t.due_date}</span>
                         <h4 class="font-bold text-slate-900 text-xs mt-1 pr-6">${t.title}</h4>
                         <p class="text-[11px] text-slate-600 mt-0.5">${t.desc || ''}</p>
                       </div>
-                      <a href="${t.url}" target="_blank" class="px-3 py-1.5 bg-slate-800 text-white rounded text-xs font-semibold">📄 Ver Material</a>
                     </div>
                   `).join('')}
                 </div>
