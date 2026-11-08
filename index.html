@@ -9,8 +9,8 @@
   <link rel="icon" type="image/jpeg" href="Logoalr.jpg">
   <link rel="apple-touch-icon" href="Logoalr.jpg">
 
-  <!-- Fuentes formales y góticas para certificados -->
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=UnifrakturMaguntia&family=Playfair+Display:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
+  <!-- Fuentes formales: Baskerville Libre y MonteCarlo -->
+  <link href="https://fonts.googleapis.com/css2?family=Baskerville+Libre:ital,wght@0,400;0,700;1,400&family=MonteCarlo&display=swap" rel="stylesheet">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -295,15 +295,8 @@
         displayEl.innerHTML = '[Nombre del Estudiante]';
         return;
       }
-      const words = val.split(' ');
-      const formatted = words.map(w => {
-        if (!w) return '';
-        const firstLetter = w.charAt(0);
-        const rest = w.slice(1);
-        return `<span style="font-family: 'UnifrakturMaguntia', cursive; font-size: 42px; font-weight: normal;">${firstLetter}</span>${rest}`;
-      }).join(' ');
-
-      displayEl.innerHTML = formatted;
+      // Iniciales en mayúscula y respetando fuente MonteCarlo
+      displayEl.innerText = val;
     }
 
     function selectStudentForCert(selectEl) {
@@ -563,9 +556,9 @@
                 </div>
               </div>
 
-              <!-- Vista Previa del Certificado (Tamaño Carta 11x8.5 pulgadas en horizontal, doble marco, esquineras, logo y pie) -->
+              <!-- Vista Previa del Certificado (Tamaño Carta 11x8.5 pulgadas en horizontal, doble marco, esquineras, logo, Baskerville y MonteCarlo) -->
               <div class="overflow-x-auto p-4 bg-slate-300 rounded-xl flex justify-center">
-                <div id="certificateContainer" style="width: 1056px; height: 816px; background: #ffffff; padding: 30px; text-align: center; position: relative; font-family: 'Playfair Display', serif; box-sizing: border-box; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
+                <div id="certificateContainer" style="width: 1056px; height: 816px; background: #ffffff; padding: 30px; text-align: center; position: relative; font-family: 'Baskerville Libre', serif; box-sizing: border-box; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
                   
                   <!-- Doble Marco y Esquineras ornamentales -->
                   <div style="position: absolute; top: 18px; left: 18px; right: 18px; bottom: 18px; border: 3px solid #1e293b; pointer-events: none; display: flex; justify-content: space-between; align-items: center;">
@@ -579,23 +572,21 @@
                   <!-- Contenido del Certificado -->
                   <div style="position: relative; z-index: 10; height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 10px 25px;">
                     
-                    <!-- Cabecera con Logo en lugar de escudo -->
+                    <!-- Cabecera con Logo -->
                     <div>
                       <div style="margin-bottom: 5px; display: flex; flex-direction: column; align-items: center;">
                         <img src="Logoalr.jpg" alt="Logo ALR" style="width: 60px; height: 60px; object-fit: cover; border-radius: 12px; border: 2px solid #1e293b; margin-bottom: 5px;">
                       </div>
 
                       <div style="margin-top: 15px;">
-                        <h1 id="displayCertTitle" style="font-family: 'Cinzel Decorative', serif; font-size: 30px; font-weight: 700; color: #0f172a; letter-spacing: 2px; text-transform: uppercase;">CERTIFICADO DE APROBACIÓN</h1>
-                        <p style="font-size: 13px; color: #475569; font-style: italic; margin-top: 5px;">Se otorga el presente reconocimiento a:</p>
+                        <h1 id="displayCertTitle" style="font-family: 'Baskerville Libre', serif; font-size: 32px; font-weight: bold; color: #0f172a; letter-spacing: 2px; text-transform: uppercase;">CERTIFICADO DE APROBACIÓN</h1>
+                        <p style="font-size: 14px; color: #475569; font-style: italic; margin-top: 5px;">Se otorga el presente reconocimiento a:</p>
                       </div>
                     </div>
 
-                    <!-- Titular editable con Letras Capitales Góticas -->
+                    <!-- Titular con Tipografía MonteCarlo (iniciales en mayúscula) -->
                     <div style="margin: 5px 0;">
-                      <h2 id="displayStudentName" style="font-size: 36px; font-weight: bold; color: #047857; border-bottom: 2px solid #cbd5e1; display: inline-block; padding-bottom: 4px; min-width: 450px;">
-                        <span style="font-family: 'UnifrakturMaguntia', cursive; font-size: 42px;">I</span>tzel <span style="font-family: 'UnifrakturMaguntia', cursive; font-size: 42px;">V</span>ega
-                      </h2>
+                      <h2 id="displayStudentName" style="font-family: 'MonteCarlo', cursive; font-size: 64px; color: #047857; border-bottom: 2px solid #cbd5e1; display: inline-block; padding-bottom: 0px; line-height: 1.1; min-width: 450px;">Itzel Vega</h2>
                     </div>
 
                     <!-- Descripción y Fecha -->
