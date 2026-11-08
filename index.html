@@ -228,7 +228,6 @@
       const title = document.getElementById('taskTitle').value.trim();
       const dueDate = document.getElementById('taskDueDate').value.trim();
       const desc = document.getElementById('taskDesc').value.trim();
-      // Sin requerir enlace obligatorio
       const url = document.getElementById('taskUrl') ? document.getElementById('taskUrl').value.trim() : '';
       if (!title || !dueDate) return alert('Completa los campos obligatorios.');
 
@@ -424,7 +423,6 @@
               <button onclick="setTab('modulos')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'modulos' ? 'text-emerald-700 bg-emerald-50' : ''}">📚 Módulos y PDFs</button>
               <button onclick="setTab('ppt')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'ppt' ? 'text-red-700 bg-red-50' : ''}">📊 Clase PPT</button>
               
-              <!-- Menú de módulos de prueba/evaluación visible exclusivamente para admin -->
               ${state.user.role === 'admin' ? `
                 <button onclick="setTab('tareas')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'tareas' ? 'text-emerald-700 bg-emerald-50' : ''}">📝 Módulos de Evaluación</button>
               ` : ''}
@@ -676,6 +674,7 @@
       if (state.activeTab === 'modulos') {
         return `
           <div class="space-y-6">
+            <!-- Sección de Carga para Administrador -->
             ${state.user.role === 'admin' ? `
               <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-5 shadow-sm">
                 <h3 class="text-xs font-bold text-emerald-900 uppercase mb-3">➕ Cargar Nuevo Módulo</h3>
@@ -693,6 +692,20 @@
               </div>
             ` : ''}
 
+            <!-- Banner de Entrega de Tareas para Estudiantes y Admin -->
+            <div class="bg-emerald-700 text-white rounded-2xl p-6 shadow-md flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div class="space-y-1 text-center sm:text-left">
+                <h3 class="font-bold text-sm uppercase tracking-wider text-emerald-100">📤 Entrega de Trabajos Resueltos</h3>
+                <p class="text-xs text-emerald-50 max-w-xl">
+                  El documento debe ser enviado con el número de módulo y el nombre del estudiante.
+                </p>
+              </div>
+              <a href="https://drive.google.com/drive/folders/1DQ-PMjSKUGsvnNK_6w6df6lGMeIawK-B" target="_blank" class="px-5 py-2.5 bg-white text-emerald-800 hover:bg-emerald-50 rounded-xl text-xs font-bold shadow-lg transition whitespace-nowrap">
+                📁 Entregar Tarea a Carpeta
+              </a>
+            </div>
+
+            <!-- Listado de Módulos Académicos -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
               <h3 class="text-sm font-bold text-slate-900">Módulos Académicos Oficiales</h3>
               ${state.modules.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay módulos cargados.</p>' : `
