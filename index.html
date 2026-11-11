@@ -48,7 +48,7 @@
         const { data: usersData } = await _supabase.from('usuarios').select('*');
         if (usersData) state.whitelist = usersData;
 
-        // Extraemos grupos únicos tanto de la memoria local como de los usuarios ya asignados
+        // Extraemos grupos de la memoria local y de los usuarios registrados
         let savedGroups = JSON.parse(localStorage.getItem('alr_groups') || '[]');
         const userGroups = state.whitelist.map(u => u.grupo).filter(g => g && g !== 'General');
         
@@ -143,7 +143,7 @@
       render();
     }
 
-    // --- GESTIÓN DE GRUPOS ROBUSTA ---
+    // --- GESTIÓN DE GRUPOS ---
     function saveGroupsToLocalStorage() {
       const groupNames = state.groups.map(g => g.name);
       localStorage.setItem('alr_groups', JSON.stringify(groupNames));
@@ -159,9 +159,9 @@
         saveGroupsToLocalStorage();
       }
 
-      alert(`¡Grupo "${groupName}" creado con éxito! Ya está disponible en los selectores.`);
+      alert(`¡Grupo "${groupName}" creado con éxito!`);
       document.getElementById('newGroupName').value = '';
-      render();
+      loadData();
     }
 
     async function deleteGroup(id, groupName) {
@@ -186,25 +186,41 @@
       }
     }
 
-    // --- REASIGNACIONES ---
+    // --- REASIGNACIONES PERSISTENTES EN SUPABASE ---
     async function updateStudentGroup(email, newGroup) {
       const { error } = await _supabase.from('usuarios').update({ grupo: newGroup }).eq('email', email);
-      if (!error) loadData();
+      if (error) {
+        alert('Error al actualizar el grupo del estudiante en la base de datos.');
+      } else {
+        loadData();
+      }
     }
 
     async function updateModuleGroup(id, newGroup) {
       const { error } = await _supabase.from('modules').update({ grupo: newGroup }).eq('id', id);
-      if (!error) loadData();
+      if (error) {
+        alert('Error al actualizar el grupo del módulo.');
+      } else {
+        loadData();
+      }
     }
 
     async function updatePresentationGroup(id, newGroup) {
       const { error } = await _supabase.from('presentations').update({ grupo: newGroup }).eq('id', id);
-      if (!error) loadData();
+      if (error) {
+        alert('Error al actualizar el grupo de la presentación.');
+      } else {
+        loadData();
+      }
     }
 
     async function updateTaskGroup(id, newGroup) {
       const { error } = await _supabase.from('tasks').update({ grupo: newGroup }).eq('id', id);
-      if (!error) loadData();
+      if (error) {
+        alert('Error al actualizar el grupo de la evaluación.');
+      } else {
+        loadData();
+      }
     }
 
     async function addStudent(event) {
