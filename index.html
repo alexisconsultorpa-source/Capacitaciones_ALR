@@ -186,16 +186,15 @@
       }
     }
 
-    // --- REASIGNACIONES CORREGIDAS CON SUPABASE ---
+    // --- REASIGNACIONES BLINDADAS EN SUPABASE ---
     async function updateStudentGroup(email, newGroup) {
-      const { data, error } = await _supabase
+      const { error } = await _supabase
         .from('usuarios')
         .update({ grupo: newGroup })
-        .eq('email', email)
-        .select();
+        .eq('email', email);
 
       if (error) {
-        alert('Error al actualizar: ' + error.message);
+        alert('Error al actualizar estudiante: ' + error.message);
       } else {
         loadData();
       }
@@ -203,29 +202,17 @@
 
     async function updateModuleGroup(id, newGroup) {
       const { error } = await _supabase.from('modules').update({ grupo: newGroup }).eq('id', id);
-      if (error) {
-        alert('Error al actualizar módulo: ' + error.message);
-      } else {
-        loadData();
-      }
+      if (error) { alert('Error: ' + error.message); } else { loadData(); }
     }
 
     async function updatePresentationGroup(id, newGroup) {
       const { error } = await _supabase.from('presentations').update({ grupo: newGroup }).eq('id', id);
-      if (error) {
-        alert('Error al actualizar presentación: ' + error.message);
-      } else {
-        loadData();
-      }
+      if (error) { alert('Error: ' + error.message); } else { loadData(); }
     }
 
     async function updateTaskGroup(id, newGroup) {
       const { error } = await _supabase.from('tasks').update({ grupo: newGroup }).eq('id', id);
-      if (error) {
-        alert('Error al actualizar evaluación: ' + error.message);
-      } else {
-        loadData();
-      }
+      if (error) { alert('Error: ' + error.message); } else { loadData(); }
     }
 
     async function addStudent(event) {
