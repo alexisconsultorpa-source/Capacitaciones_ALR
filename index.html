@@ -52,7 +52,6 @@
         if (groupsData) {
           state.groups = groupsData;
         } else {
-          // Si la tabla grupos aún no existe en Supabase, extraemos grupos únicos de los usuarios
           const uniqueGroups = [...new Set(state.whitelist.map(u => u.grupo).filter(Boolean))];
           state.groups = uniqueGroups.map((g, idx) => ({ id: idx + 1, name: g }));
         }
@@ -145,16 +144,14 @@
       render();
     }
 
-    // --- GESTIÓN INDEPENDIENTE DE GRUPOS ---
+    // --- GESTIÓN DE GRUPOS INDEPENDIENTES ---
     async function addGroup(event) {
       event.preventDefault();
       const groupName = document.getElementById('newGroupName').value.trim();
       if (!groupName) return alert('Escribe el nombre del grupo.');
 
-      // Intenta guardar en la tabla 'grupos'
       const { error } = await _supabase.from('grupos').insert([{ name: groupName }]);
       if (error) {
-        // Respaldo local si la tabla aún no se crea en Supabase
         if (!state.groups.some(g => g.name === groupName)) {
           state.groups.push({ id: Date.now(), name: groupName });
         }
@@ -164,44 +161,53 @@
       loadData();
     }
 
-    // --- REASIGNACIONES DE GRUPO ---
-    async function updateStudentGroup(email, newGroup) {
-      const { error } = await _supabase.from('usuarios').update({ grupo: newGroup }).eq('email', email);
+    async function deleteGroup(id, groupName) {
+      if (confirm(`¿Estás seguro de eliminar el grupo "${groupName}"?`)) {
+        const { error } = await _supabase.from('grupos').delete().eq('id', id);
+        if (!error) {
+          state.groups = state.groups.filter(g => g.id !== id);
+          loadData();
+        } else {
+          alert('Error al eliminar el grupo.');
+        }
+      }
+    }
+
+    async function updateGroupName(id, oldName) {
+      const newName = prompt('Editar nombre del grupo:', oldName);
+      if (!newName || newName.trim() === '' || newName === oldName) return;
+
+      const trimmedName = newName.trim();
+      const { error } = await _supabase.from('grupos').update({ name: trimmedName }).eq('id', id);
       if (!error) {
+        alert('¡Grupo actualizado con éxito!');
         loadData();
       } else {
-        alert('Error al reasignar el grupo del estudiante.');
+        alert('Error al actualizar el grupo.');
       }
+    }
+
+    // --- REASIGNACIONES ---
+    async function updateStudentGroup(email, newGroup) {
+      const { error } = await _supabase.from('usuarios').update({ grupo: newGroup }).eq('email', email);
+      if (!error) loadData();
     }
 
     async function updateModuleGroup(id, newGroup) {
       const { error } = await _supabase.from('modules').update({ grupo: newGroup }).eq('id', id);
-      if (!error) {
-        loadData();
-      } else {
-        alert('Error al mover el módulo de grupo.');
-      }
+      if (!error) loadData();
     }
 
     async function updatePresentationGroup(id, newGroup) {
       const { error } = await _supabase.from('presentations').update({ grupo: newGroup }).eq('id', id);
-      if (!error) {
-        loadData();
-      } else {
-        alert('Error al mover la presentación PPT de grupo.');
-      }
+      if (!error) loadData();
     }
 
     async function updateTaskGroup(id, newGroup) {
       const { error } = await _supabase.from('tasks').update({ grupo: newGroup }).eq('id', id);
-      if (!error) {
-        loadData();
-      } else {
-        alert('Error al mover la evaluación de grupo.');
-      }
+      if (!error) loadData();
     }
 
-    // --- CREACIÓN DE REGISTROS ---
     async function addStudent(event) {
       event.preventDefault();
       const name = document.getElementById('studentName').value.trim();
@@ -502,8 +508,9 @@
               <button onclick="setTab('preguntas')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'preguntas' ? 'text-emerald-700 bg-emerald-50' : ''}">❓ Preguntas</button>
               
               ${state.user.role === 'admin' ? `
-                <button onclick="setTab('certificados')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 border-t border-slate-100 ${state.activeTab === 'certificados' ? 'text-emerald-700 bg-emerald-50' : ''}">📜 Generador de Certificados</button>
-                <button onclick="setTab('estudiantes')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'estudiantes' ? 'text-emerald-700 bg-emerald-50' : ''}">👥 Gestión de Grupos</button>
+                <button onclick="setTab('grupos')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 border-t border-slate-100 ${state.activeTab === 'grupos' ? 'text-emerald-700 bg-emerald-50' : ''}">📁 Administración de Grupos</button>
+                <button onclick="setTab('certificados')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'certificados' ? 'text-emerald-700 bg-emerald-50' : ''}">📜 Generador de Certificados</button>
+                <button onclick="setTab('estudiantes')" class="w-full text-left px-4 py-2.5 text-xs font-semibold hover:bg-slate-50 flex items-center space-x-2 ${state.activeTab === 'estudiantes' ? 'text-emerald-700 bg-emerald-50' : ''}">👥 Gestión de Estudiantes</button>
               ` : ''}
 
               <div class="border-t border-slate-100 mt-1 pt-1 sm:hidden">
@@ -529,11 +536,10 @@
     function renderTabContent() {
       const userGroup = state.user.role === 'admin' ? null : state.user.grupo;
 
-      if (state.activeTab === 'estudiantes' && state.user.role === 'admin') {
-        const studentsList = state.whitelist.filter(u => u.role === 'student');
+      // --- PESTAÑA EXCLUSIVA: ADMINISTRACIÓN DE GRUPOS ---
+      if (state.activeTab === 'grupos' && state.user.role === 'admin') {
         return `
           <div class="space-y-6">
-            <!-- 1. CREACIÓN INDEPENDIENTE DE GRUPOS -->
             <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 shadow-sm">
               <h3 class="text-xs font-bold text-blue-900 uppercase mb-3">📁 Crear Nuevo Grupo / Cohorte Independiente</h3>
               <form onsubmit="addGroup(event)" class="flex gap-3">
@@ -542,7 +548,40 @@
               </form>
             </div>
 
-            <!-- 2. REGISTRO DE ESTUDIANTES ASIGNADOS A UN GRUPO -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+              <h3 class="text-sm font-bold text-slate-900">Grupos Creados en el Sistema</h3>
+              ${state.groups.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay grupos creados todavía.</p>' : `
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-xs text-slate-600">
+                    <thead class="bg-slate-50 text-slate-700 uppercase text-[9px]">
+                      <tr>
+                        <th class="py-2.5 px-3">Nombre del Grupo</th>
+                        <th class="py-2.5 px-3 text-center">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                      ${state.groups.map(g => `
+                        <tr>
+                          <td class="py-2.5 px-3 font-bold text-slate-800 text-sm">${g.name}</td>
+                          <td class="py-2.5 px-3 text-center space-x-3">
+                            <button onclick="updateGroupName(${g.id}, '${g.name}')" class="text-blue-600 hover:underline font-semibold">✏️ Editar</button>
+                            <button onclick="deleteGroup(${g.id}, '${g.name}')" class="text-red-600 hover:underline font-semibold">🗑️ Eliminar</button>
+                          </td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              `}
+            </div>
+          </div>
+        `;
+      }
+
+      if (state.activeTab === 'estudiantes' && state.user.role === 'admin') {
+        const studentsList = state.whitelist.filter(u => u.role === 'student');
+        return `
+          <div class="space-y-6">
             <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-5 shadow-sm">
               <h3 class="text-xs font-bold text-emerald-900 uppercase mb-3">➕ Registrar Nuevo Estudiante</h3>
               <form onsubmit="addStudent(event)" class="space-y-3">
@@ -561,7 +600,6 @@
               </form>
             </div>
 
-            <!-- 3. LISTADO DE ESTUDIANTES CON OPCIÓN DE REASIGNACIÓN EN TIEMPO REAL -->
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
               <h3 class="text-sm font-bold text-slate-900">Estudiantes Registrados y Reasignación de Grupos</h3>
               ${studentsList.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay estudiantes registrados.</p>' : `
