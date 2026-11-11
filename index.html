@@ -186,11 +186,16 @@
       }
     }
 
-    // --- REASIGNACIONES PERSISTENTES EN SUPABASE ---
+    // --- REASIGNACIONES CORREGIDAS CON SUPABASE ---
     async function updateStudentGroup(email, newGroup) {
-      const { error } = await _supabase.from('usuarios').update({ grupo: newGroup }).eq('email', email);
+      const { data, error } = await _supabase
+        .from('usuarios')
+        .update({ grupo: newGroup })
+        .eq('email', email)
+        .select();
+
       if (error) {
-        alert('Error al actualizar el grupo del estudiante en la base de datos.');
+        alert('Error al actualizar: ' + error.message);
       } else {
         loadData();
       }
@@ -199,7 +204,7 @@
     async function updateModuleGroup(id, newGroup) {
       const { error } = await _supabase.from('modules').update({ grupo: newGroup }).eq('id', id);
       if (error) {
-        alert('Error al actualizar el grupo del módulo.');
+        alert('Error al actualizar módulo: ' + error.message);
       } else {
         loadData();
       }
@@ -208,7 +213,7 @@
     async function updatePresentationGroup(id, newGroup) {
       const { error } = await _supabase.from('presentations').update({ grupo: newGroup }).eq('id', id);
       if (error) {
-        alert('Error al actualizar el grupo de la presentación.');
+        alert('Error al actualizar presentación: ' + error.message);
       } else {
         loadData();
       }
@@ -217,7 +222,7 @@
     async function updateTaskGroup(id, newGroup) {
       const { error } = await _supabase.from('tasks').update({ grupo: newGroup }).eq('id', id);
       if (error) {
-        alert('Error al actualizar el grupo de la evaluación.');
+        alert('Error al actualizar evaluación: ' + error.message);
       } else {
         loadData();
       }
@@ -234,7 +239,7 @@
 
       const { error } = await _supabase.from('usuarios').insert([{ name, email, cedula, grupo: grupo || 'General', role: 'student' }]);
       if (error) {
-        alert('Error al registrar estudiante.');
+        alert('Error al registrar estudiante: ' + error.message);
       } else {
         alert(`¡Estudiante ${name} registrado con éxito!`);
         loadData();
