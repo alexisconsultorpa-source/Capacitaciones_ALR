@@ -48,13 +48,21 @@
         const { data: usersData } = await _supabase.from('usuarios').select('*');
         if (usersData) state.whitelist = usersData;
 
-        const { data: groupsData } = await _supabase.from('grupos').select('*').order('id', { ascending: false });
-        if (groupsData) {
-          state.groups = groupsData;
+        // Cargamos grupos desde Supabase o extraemos los existentes en usuarios
+        const { data: groupsData, error: groupErr } = await _supabase.from('grupos').select('*').order('id', { ascending: false });
+        
+        let extractedGroups = [];
+        if (groupsData && groupsData.length > 0) {
+          extractedGroups = groupsData;
         } else {
-          const uniqueGroups = [...new Set(state.whitelist.map(u => u.grupo).filter(Boolean))];
-          state.groups = uniqueGroups.map((g, idx) => ({ id: idx + 1, name: g }));
+          // Si no hay tabla grupos o está vacía, extraemos todos los grupos únicos asignados a usuarios y módulos
+          const userGroups = state.whitelist.map(u => u.grupo).filter(g => g && g !== 'General');
+          const uniqueGroups = [...new Set(userGroups)];
+          extractedGroups = uniqueGroups.map((g, idx) => ({ id: idx + 1, name: g }));
         }
+        
+        // Aseguramos que siempre existan los grupos en el estado
+        state.groups = extractedGroups;
 
         const { data: postsData } = await _supabase.from('posts').select('*').order('id', { ascending: false });
         if (postsData) state.posts = postsData;
@@ -150,26 +158,23 @@
       const groupName = document.getElementById('newGroupName').value.trim();
       if (!groupName) return alert('Escribe el nombre del grupo.');
 
+      // Guardamos en la tabla grupos de Supabase (si existe) y actualizamos el estado local
       const { error } = await _supabase.from('grupos').insert([{ name: groupName }]);
-      if (error) {
-        if (!state.groups.some(g => g.name === groupName)) {
-          state.groups.push({ id: Date.now(), name: groupName });
-        }
+      
+      if (!state.groups.some(g => g.name === groupName)) {
+        state.groups.unshift({ id: Date.now(), name: groupName });
       }
-      alert(`¡Grupo "${groupName}" creado con éxito!`);
+
+      alert(`¡Grupo "${groupName}" creado con éxito! Ya aparecerá disponible en los selectores.`);
       document.getElementById('newGroupName').value = '';
       loadData();
     }
 
     async function deleteGroup(id, groupName) {
       if (confirm(`¿Estás seguro de eliminar el grupo "${groupName}"?`)) {
-        const { error } = await _supabase.from('grupos').delete().eq('id', id);
-        if (!error) {
-          state.groups = state.groups.filter(g => g.id !== id);
-          loadData();
-        } else {
-          alert('Error al eliminar el grupo.');
-        }
+        await _supabase.from('grupos').delete().eq('id', id);
+        state.groups = state.groups.filter(g => g.id !== id);
+        loadData();
       }
     }
 
@@ -178,13 +183,13 @@
       if (!newName || newName.trim() === '' || newName === oldName) return;
 
       const trimmedName = newName.trim();
-      const { error } = await _supabase.from('grupos').update({ name: trimmedName }).eq('id', id);
-      if (!error) {
-        alert('¡Grupo actualizado con éxito!');
-        loadData();
-      } else {
-        alert('Error al actualizar el grupo.');
-      }
+      await _supabase.from('grupos').update({ name: trimmedName }).eq('id', id);
+      
+      const targetGroup = state.groups.find(g => g.id === id);
+      if (targetGroup) targetGroup.name = trimmedName;
+
+      alert('¡Grupo actualizado con éxito!');
+      loadData();
     }
 
     // --- REASIGNACIONES ---
@@ -536,7 +541,7 @@
     function renderTabContent() {
       const userGroup = state.user.role === 'admin' ? null : state.user.grupo;
 
-      // --- PESTAÑA EXCLUSIVA: ADMINISTRACIÓN DE GRUPOS ---
+      // --- PESTAÑA: ADMINISTRACIÓN DE GRUPOS ---
       if (state.activeTab === 'grupos' && state.user.role === 'admin') {
         return `
           <div class="space-y-6">
@@ -590,7 +595,7 @@
                   <input type="email" id="studentEmail" required placeholder="Correo electrónico" class="p-2 border rounded text-xs bg-white">
                   <input type="text" id="studentCedula" required placeholder="Número de cédula" class="p-2 border rounded text-xs bg-white">
                   <select id="studentGroupSelect" class="p-2 border rounded text-xs bg-white font-semibold">
-                    <option value="General">Grupo General / Sin Asignar</option>
+                    <option value="General">General / Sin Asignar</option>
                     ${state.groups.map(g => `<option value="${g.name}">${g.name}</option>`).join('')}
                   </select>
                 </div>
