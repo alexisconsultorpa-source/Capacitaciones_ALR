@@ -186,15 +186,16 @@
       }
     }
 
-    // --- REASIGNACIONES POR ID (MÁS SEGURO Y PRECISO) ---
-    async function updateStudentGroupById(userId, newGroup) {
+    // --- REASIGNACIÓN DE ESTUDIANTES POR CORREO (SEGURO Y EFECTIVO) ---
+    async function updateStudentGroup(email, newGroup) {
+      const cleanEmail = email.trim().toLowerCase();
       const { error } = await _supabase
         .from('usuarios')
         .update({ grupo: newGroup })
-        .eq('id', userId);
+        .eq('email', cleanEmail);
 
       if (error) {
-        alert('Error al actualizar estudiante: ' + error.message);
+        alert('Error al actualizar el grupo del estudiante: ' + error.message);
       } else {
         loadData();
       }
@@ -628,7 +629,7 @@
                           <td class="py-2.5 px-3">${st.email}</td>
                           <td class="py-2.5 px-3">${st.cedula}</td>
                           <td class="py-2.5 px-3">
-                            <select onchange="updateStudentGroupById(${st.id}, this.value)" class="p-1 border rounded text-xs font-semibold bg-emerald-50 text-emerald-900 border-emerald-300">
+                            <select onchange="updateStudentGroup('${st.email}', this.value)" class="p-1 border rounded text-xs font-semibold bg-emerald-50 text-emerald-900 border-emerald-300">
                               <option value="General" ${(!st.grupo || st.grupo === 'General') ? 'selected' : ''}>General / Sin Grupo</option>
                               ${state.groups.map(g => `<option value="${g.name}" ${st.grupo === g.name ? 'selected' : ''}>${g.name}</option>`).join('')}
                             </select>
