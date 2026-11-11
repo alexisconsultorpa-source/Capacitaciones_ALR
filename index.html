@@ -48,21 +48,12 @@
         const { data: usersData } = await _supabase.from('usuarios').select('*');
         if (usersData) state.whitelist = usersData;
 
-        // Cargamos grupos desde Supabase o extraemos los existentes en usuarios
-        const { data: groupsData, error: groupErr } = await _supabase.from('grupos').select('*').order('id', { ascending: false });
+        // Extraemos grupos únicos tanto de la memoria local como de los usuarios ya asignados
+        let savedGroups = JSON.parse(localStorage.getItem('alr_groups') || '[]');
+        const userGroups = state.whitelist.map(u => u.grupo).filter(g => g && g !== 'General');
         
-        let extractedGroups = [];
-        if (groupsData && groupsData.length > 0) {
-          extractedGroups = groupsData;
-        } else {
-          // Si no hay tabla grupos o está vacía, extraemos todos los grupos únicos asignados a usuarios y módulos
-          const userGroups = state.whitelist.map(u => u.grupo).filter(g => g && g !== 'General');
-          const uniqueGroups = [...new Set(userGroups)];
-          extractedGroups = uniqueGroups.map((g, idx) => ({ id: idx + 1, name: g }));
-        }
-        
-        // Aseguramos que siempre existan los grupos en el estado
-        state.groups = extractedGroups;
+        const combined = [...new Set([...savedGroups, ...userGroups])];
+        state.groups = combined.map((g, idx) => ({ id: idx + 1, name: g }));
 
         const { data: postsData } = await _supabase.from('posts').select('*').order('id', { ascending: false });
         if (postsData) state.posts = postsData;
@@ -152,28 +143,31 @@
       render();
     }
 
-    // --- GESTIÓN DE GRUPOS INDEPENDIENTES ---
+    // --- GESTIÓN DE GRUPOS ROBUSTA ---
+    function saveGroupsToLocalStorage() {
+      const groupNames = state.groups.map(g => g.name);
+      localStorage.setItem('alr_groups', JSON.stringify(groupNames));
+    }
+
     async function addGroup(event) {
       event.preventDefault();
       const groupName = document.getElementById('newGroupName').value.trim();
       if (!groupName) return alert('Escribe el nombre del grupo.');
 
-      // Guardamos en la tabla grupos de Supabase (si existe) y actualizamos el estado local
-      const { error } = await _supabase.from('grupos').insert([{ name: groupName }]);
-      
-      if (!state.groups.some(g => g.name === groupName)) {
-        state.groups.unshift({ id: Date.now(), name: groupName });
+      if (!state.groups.some(g => g.name.toLowerCase() === groupName.toLowerCase())) {
+        state.groups.push({ id: Date.now(), name: groupName });
+        saveGroupsToLocalStorage();
       }
 
-      alert(`¡Grupo "${groupName}" creado con éxito! Ya aparecerá disponible en los selectores.`);
+      alert(`¡Grupo "${groupName}" creado con éxito! Ya está disponible en los selectores.`);
       document.getElementById('newGroupName').value = '';
-      loadData();
+      render();
     }
 
     async function deleteGroup(id, groupName) {
       if (confirm(`¿Estás seguro de eliminar el grupo "${groupName}"?`)) {
-        await _supabase.from('grupos').delete().eq('id', id);
         state.groups = state.groups.filter(g => g.id !== id);
+        saveGroupsToLocalStorage();
         loadData();
       }
     }
@@ -183,13 +177,13 @@
       if (!newName || newName.trim() === '' || newName === oldName) return;
 
       const trimmedName = newName.trim();
-      await _supabase.from('grupos').update({ name: trimmedName }).eq('id', id);
-      
-      const targetGroup = state.groups.find(g => g.id === id);
-      if (targetGroup) targetGroup.name = trimmedName;
-
-      alert('¡Grupo actualizado con éxito!');
-      loadData();
+      const target = state.groups.find(g => g.id === id);
+      if (target) {
+        target.name = trimmedName;
+        saveGroupsToLocalStorage();
+        alert('¡Grupo actualizado con éxito!');
+        loadData();
+      }
     }
 
     // --- REASIGNACIONES ---
