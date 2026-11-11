@@ -186,12 +186,12 @@
       }
     }
 
-    // --- REASIGNACIONES BLINDADAS EN SUPABASE ---
-    async function updateStudentGroup(email, newGroup) {
+    // --- REASIGNACIONES POR ID (MÁS SEGURO Y PRECISO) ---
+    async function updateStudentGroupById(userId, newGroup) {
       const { error } = await _supabase
         .from('usuarios')
         .update({ grupo: newGroup })
-        .eq('email', email);
+        .eq('id', userId);
 
       if (error) {
         alert('Error al actualizar estudiante: ' + error.message);
@@ -628,7 +628,7 @@
                           <td class="py-2.5 px-3">${st.email}</td>
                           <td class="py-2.5 px-3">${st.cedula}</td>
                           <td class="py-2.5 px-3">
-                            <select onchange="updateStudentGroup('${st.email}', this.value)" class="p-1 border rounded text-xs font-semibold bg-emerald-50 text-emerald-900 border-emerald-300">
+                            <select onchange="updateStudentGroupById(${st.id}, this.value)" class="p-1 border rounded text-xs font-semibold bg-emerald-50 text-emerald-900 border-emerald-300">
                               <option value="General" ${(!st.grupo || st.grupo === 'General') ? 'selected' : ''}>General / Sin Grupo</option>
                               ${state.groups.map(g => `<option value="${g.name}" ${st.grupo === g.name ? 'selected' : ''}>${g.name}</option>`).join('')}
                             </select>
