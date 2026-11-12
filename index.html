@@ -186,7 +186,7 @@
       }
     }
 
-    // --- REASIGNACIÓN DE ESTUDIANTES POR CORREO (SEGURO Y EFECTIVO) ---
+    // --- REASIGNACIÓN DE ESTUDIANTES ---
     async function updateStudentGroup(email, newGroup) {
       const cleanEmail = email.trim().toLowerCase();
       const { error } = await _supabase
@@ -412,6 +412,13 @@
 
       const { error } = await _supabase.from('questions').update({ answer: text, answered: true }).eq('id', qId);
       if (!error) loadData();
+    }
+
+    async function deleteQuestion(qId) {
+      if (confirm('¿Estás seguro de eliminar esta consulta?')) {
+        const { error } = await _supabase.from('questions').delete().eq('id', qId);
+        if (!error) loadData();
+      }
     }
 
     async function resetSalonData() {
@@ -1099,6 +1106,7 @@
       }
 
       if (state.activeTab === 'preguntas') {
+        const isAdmin = state.user.role === 'admin';
         return `
           <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
             <h3 class="text-sm font-bold text-slate-900">Preguntas Directas al Capacitador</h3>
@@ -1111,14 +1119,15 @@
             <div class="space-y-3 pt-2">
               ${state.questions.length === 0 ? '<p class="text-center text-xs text-slate-400 py-6">No hay preguntas registradas.</p>' : `
                 ${state.questions.map(q => `
-                  <div class="border rounded-lg p-3 bg-slate-50 space-y-2 text-xs">
-                    <div class="font-bold text-slate-800">Consulta de: ${q.student}</div>
+                  <div class="border rounded-lg p-3 bg-slate-50 space-y-2 text-xs relative">
+                    ${isAdmin ? `<button onclick="deleteQuestion(${q.id})" class="absolute top-3 right-3 text-slate-400 hover:text-red-600 text-xs" title="Eliminar pregunta">🗑️</button>` : ''}
+                    <div class="font-bold text-slate-800 pr-6">Consulta de: ${q.student}</div>
                     <p class="bg-white p-2.5 rounded border">"${q.question}"</p>
                     ${q.answered ? `
                       <div class="bg-emerald-50 border border-emerald-200 p-2.5 rounded text-emerald-900">
                         <b>Respuesta Oficial:</b> ${q.answer}
                       </div>
-                    ` : (state.user.role === 'admin' ? `
+                    ` : (isAdmin ? `
                       <div class="space-y-1 pt-1">
                         <input type="text" id="ans-${q.id}" placeholder="Escribe la respuesta..." class="w-full bg-white border rounded px-2 py-1 text-xs">
                         <button onclick="answerQuestion(${q.id})" class="bg-emerald-600 text-white px-3 py-1 rounded text-xs font-semibold">Publicar Respuesta</button>
